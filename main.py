@@ -76,7 +76,7 @@ async def main():
         Config.URL or f"http://{Config.BIND_ADDRESS}:{Config.PORT}",
     )
 
-     try:
+    try:
         await asyncio.Event().wait()
     finally:
         logger.info("Shutting down web server …")
