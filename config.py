@@ -57,9 +57,20 @@ class Config:
         if not doc:
             doc = {
                 "key":               "Settings",
+                # Force-sub
                 "fsub_mode":         bool(cls.FSUB_ID),
                 "fsub_chat_id":      cls.FSUB_ID or 0,
                 "fsub_inv_link":     cls.FSUB_INV_LINK or "",
+                # Auth group
+                "auth_mode":         False,
+                "auth_chat_id":      0,
+                "auth_inv_link":     "",
+                # Token / shortlink
+                "token_mode":        False,
+                "api_url":           "",
+                "api_key":           "",
+                "duration":          24,
+                # Bandwidth / misc
                 "max_bandwidth":     int(os.environ.get("MAX_BANDWIDTH", 107374182400)),
                 "bandwidth_used":    0,
                 "public_bot":        os.environ.get("PUBLIC_BOT", "False").lower() == "true",
@@ -69,6 +80,24 @@ class Config:
             await db.config.insert_one(doc)
             logger.info("config created in db")
         else:
+            # Ensure new fields exist on old documents (migration)
+            defaults = {
+                "auth_mode":    False,
+                "auth_chat_id": 0,
+                "auth_inv_link": "",
+                "token_mode":   False,
+                "api_url":      "",
+                "api_key":      "",
+                "duration":     24,
+            }
+            missing = {k: v for k, v in defaults.items() if k not in doc}
+            if missing:
+                await db.config.update_one(
+                    {"key": "Settings"},
+                    {"$set": missing},
+                )
+                doc.update(missing)
+                logger.info("migrated config — added fields: %s", list(missing.keys()))
             logger.info("config loaded from db")
         cls._data = doc
 
