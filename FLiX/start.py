@@ -52,19 +52,54 @@ async def start_command(client: Client, message: Message):
             if not file_data:
                 await client.send_message(
                     chat_id=message.chat.id,
-                    text=f"❌ {small_caps('error')}: ꜰɪʟᴇ ɴᴏᴛ ꜰᴏᴜɴᴅ ᴏʀ ᴇxᴘɪʀᴇᴅ",
+                    text=(
+                        f"❌ *{small_caps('file not found')}*\n\n"
+                        f"ᴛʜᴇ ꜰɪʟᴇ ʟɪɴᴋ ɪꜱ ɪɴᴠᴀʟɪᴅ ᴏʀ ʜᴀꜱ ʙᴇᴇɴ ᴅᴇʟᴇᴛᴇᴅ."
+                    ),
                     reply_to_message_id=message.id,
                 )
                 return
 
-            await client.copy_message(
-                chat_id=message.chat.id,
-                from_chat_id=Config.DUMP_CHAT_ID,
-                message_id=int(file_data["message_id"]),
+            from helper import format_size, escape_markdown
+            base_url      = Config.URL or f"http://localhost:{Config.PORT}"
+            stream_link   = f"{base_url}/stream/{file_hash}"
+            download_link = f"{base_url}/dl/{file_hash}"
+
+            file_type = file_data.get("file_type", "document")
+            is_streamable = file_type in ("video", "audio")
+
+            safe_name      = escape_markdown(file_data["file_name"])
+            formatted_size = format_size(file_data["file_size"])
+
+            text = (
+                f"✅ *{small_caps('file found')}!*\n\n"
+                f"📂 *{small_caps('name')}:* `{safe_name}`\n"
+                f"💾 *{small_caps('size')}:* `{formatted_size}`\n"
+                f"📊 *{small_caps('type')}:* `{file_type}`\n\n"
             )
+
+            btn_rows = []
+            if is_streamable:
+                text += f"🎬 *{small_caps('stream link')}:*\n`{stream_link}`"
+                btn_rows.append([
+                    InlineKeyboardButton(f"🎬 {small_caps('stream')}",   url=stream_link),
+                    InlineKeyboardButton(f"📥 {small_caps('download')}", url=download_link),
+                ])
+            else:
+                text += f"🔗 *{small_caps('download link')}:*\n`{download_link}`"
+                btn_rows.append([
+                    InlineKeyboardButton(f"📥 {small_caps('download')}", url=download_link),
+                ])
 
             import asyncio
             asyncio.create_task(db.increment_downloads(file_data["message_id"], 0))
+
+            await client.send_message(
+                chat_id=message.chat.id,
+                text=text,
+                reply_to_message_id=message.id,
+                reply_markup=InlineKeyboardMarkup(btn_rows),
+            )
 
         except Exception as exc:
             logger.error("deep-link error: user=%s hash=%s err=%s", user_id, file_hash, exc)
@@ -95,6 +130,7 @@ async def start_command(client: Client, message: Message):
     if user_id in Config.OWNER_ID:
         start_text += (
             f"\n\n*{small_caps('owner commands')}:*\n"
+            f"/bot_settings — ⚙️ ꜰᴜʟʟ ꜱᴇᴛᴛɪɴɢꜱ ᴘᴀɴᴇʟ\n"
             f"/setpublic    — ᴛᴏɢɢʟᴇ ᴘᴜʙʟɪᴄ/ᴘʀɪᴠᴀᴛᴇ\n"
             f"/addsudo      — ᴀᴅᴅ ꜱᴜᴅᴏ ᴜꜱᴇʀ\n"
             f"/setbandwidth — ꜱᴇᴛ ʙᴀɴᴅᴡɪᴅᴛʜ ʟɪᴍɪᴛ\n"

@@ -42,6 +42,7 @@ class Bot(Client):
         ]
 
         owner_commands = user_commands + [
+            BotCommand("bot_settings", "⚙️ ʙᴏᴛ ꜱᴇᴛᴛɪɴɢꜱ ᴘᴀɴᴇʟ"),
             BotCommand("setpublic",    "🔓 ᴛᴏɢɢʟᴇ ᴘᴜʙʟɪᴄ/ᴘʀɪᴠᴀᴛᴇ ᴍᴏᴅᴇ"),
             BotCommand("addsudo",      "➕ ᴀᴅᴅ ꜱᴜᴅᴏ ᴜꜱᴇʀ"),
             BotCommand("rmsudo",       "➖ ʀᴇᴍᴏᴠᴇ ꜱᴜᴅᴏ ᴜꜱᴇʀ"),

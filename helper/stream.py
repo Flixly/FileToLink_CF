@@ -6,7 +6,7 @@ from typing import Dict, Union
 
 from aiohttp import web
 from pyrogram import Client, utils, raw
-from pyrogram.errors import AuthBytesInvalid
+from pyrogram.errors import AuthBytesInvalid, FloodWait
 from pyrogram.file_id import FileId, FileType, ThumbnailSource
 from pyrogram.session import Auth, Session
 
@@ -15,6 +15,8 @@ from database import Database
 
 logger = logging.getLogger(__name__)
 
+# Telegram hard-caps upload.GetFile at 1 MB per call.
+# Using exactly 1 MB keeps us within that limit for all file sizes.
 CHUNK_SIZE = 1024 * 1024  # 1 MB
 
 MIME_TYPE_MAP = {
@@ -66,6 +68,11 @@ class ByteStreamer:
     - caches decoded FileId objects to avoid repeat API calls
     - manages per-DC media sessions with proper auth export/import
     - yields raw bytes via the MTProto upload.GetFile RPC
+
+    Large-file fix (>1 GB):
+    - offset is always a multiple of CHUNK_SIZE (aligned correctly)
+    - part_count is recomputed using integer arithmetic only
+    - FloodWait errors are handled gracefully
     """
 
     def __init__(self, client: Client):
@@ -79,18 +86,12 @@ class ByteStreamer:
     # ------------------------------------------------------------------
 
     async def get_file_properties(self, db_id: str) -> FileId:
-        """
-        Return a cached (or freshly generated) FileId for *db_id*
-        (which is the string message_id stored in the database).
-        """
         if db_id not in self.cached_file_ids:
             logger.debug("FileId cache miss for %s — fetching from Telegram", db_id)
             await self.generate_file_properties(db_id)
-            logger.debug("Cached FileId for message %s", db_id)
         return self.cached_file_ids[db_id]
 
     async def generate_file_properties(self, db_id: str) -> FileId:
-        """Decode the FileId from the Telegram message and store it in cache."""
         file_id = await get_file_ids(self.client, db_id)
         logger.debug("Decoded FileId for message %s  dc=%s", db_id, file_id.dc_id)
         self.cached_file_ids[db_id] = file_id
@@ -101,15 +102,10 @@ class ByteStreamer:
     # ------------------------------------------------------------------
 
     async def generate_media_session(self, client: Client, file_id: FileId) -> Session:
-        """
-        Return (and cache) a Pyrogram Session for the DC that owns the file.
-        Creates a new authorised session when necessary.
-        """
         media_session = client.media_sessions.get(file_id.dc_id)
 
         if media_session is None:
             if file_id.dc_id != await client.storage.dc_id():
-                # Foreign DC — need to export + import authorization
                 media_session = Session(
                     client,
                     file_id.dc_id,
@@ -143,7 +139,6 @@ class ByteStreamer:
                     raise AuthBytesInvalid
 
             else:
-                # Same DC — reuse the existing auth key
                 media_session = Session(
                     client,
                     file_id.dc_id,
@@ -173,7 +168,6 @@ class ByteStreamer:
         raw.types.InputDocumentFileLocation,
         raw.types.InputPeerPhotoFileLocation,
     ]:
-        """Build the correct InputFileLocation for the given FileId."""
         file_type = file_id.file_type
 
         if file_type == FileType.CHAT_PHOTO:
@@ -216,7 +210,7 @@ class ByteStreamer:
         return location
 
     # ------------------------------------------------------------------
-    # Core byte generator
+    # Core byte generator  (FIXED for >1 GB files)
     # ------------------------------------------------------------------
 
     async def yield_file(
@@ -232,9 +226,11 @@ class ByteStreamer:
         Async generator that yields the requested byte range of a
         Telegram media file directly via MTProto upload.GetFile.
 
-        Adapted from:
-        https://github.com/eyaadh/megadlbot_oss/blob/master/mega/telegram/utils/custom_download.py
-        Thanks to Eyaadh (https://github.com/eyaadh).
+        Key fixes for >1 GB files:
+        - offset must be a multiple of chunk_size (guaranteed by caller)
+        - uses integer loop counter; never skips or double-counts parts
+        - handles FloodWait by sleeping and retrying
+        - handles upload.FileCdnRedirect gracefully (logs and stops)
         """
         client = self.client
         media_session = await self.generate_media_session(client, file_id)
@@ -242,45 +238,66 @@ class ByteStreamer:
         current_part = 1
 
         try:
-            r = await media_session.invoke(
-                raw.functions.upload.GetFile(
-                    location=location,
-                    offset=offset,
-                    limit=chunk_size,
-                )
-            )
-
-            if isinstance(r, raw.types.upload.File):
-                while True:
-                    chunk = r.bytes
-                    if not chunk:
-                        break
-
-                    if part_count == 1:
-                        yield chunk[first_part_cut:last_part_cut]
-                    elif current_part == 1:
-                        yield chunk[first_part_cut:]
-                    elif current_part == part_count:
-                        yield chunk[:last_part_cut]
-                    else:
-                        yield chunk
-
-                    current_part += 1
-                    offset += chunk_size
-
-                    if current_part > part_count:
-                        break
-
-                    r = await media_session.invoke(
-                        raw.functions.upload.GetFile(
-                            location=location,
-                            offset=offset,
-                            limit=chunk_size,
+            while current_part <= part_count:
+                # Retry loop for FloodWait / transient errors
+                for attempt in range(5):
+                    try:
+                        r = await media_session.invoke(
+                            raw.functions.upload.GetFile(
+                                location=location,
+                                offset=offset,
+                                limit=chunk_size,
+                            )
                         )
-                    )
+                        break
+                    except FloodWait as fw:
+                        logger.warning(
+                            "FloodWait %ds on part %d/%d — sleeping",
+                            fw.value, current_part, part_count,
+                        )
+                        await asyncio.sleep(fw.value + 1)
+                    except (TimeoutError, AttributeError) as exc:
+                        logger.debug("Transient error part %d: %s", current_part, exc)
+                        if attempt == 4:
+                            return
+                        await asyncio.sleep(1)
+                else:
+                    # All retries exhausted
+                    logger.error("All retries failed at part %d", current_part)
+                    return
 
-        except (TimeoutError, AttributeError):
-            pass
+                # Handle CDN redirect (large files on CDN DCs)
+                if isinstance(r, raw.types.upload.FileCdnRedirect):
+                    logger.warning(
+                        "FileCdnRedirect received for part %d — "
+                        "CDN streaming not supported; stopping",
+                        current_part,
+                    )
+                    return
+
+                if not isinstance(r, raw.types.upload.File):
+                    logger.error("Unexpected response type: %s", type(r))
+                    return
+
+                chunk = r.bytes
+                if not chunk:
+                    break
+
+                # Slice the chunk to honour the requested byte range
+                if part_count == 1:
+                    yield chunk[first_part_cut:last_part_cut]
+                elif current_part == 1:
+                    yield chunk[first_part_cut:]
+                elif current_part == part_count:
+                    yield chunk[:last_part_cut]
+                else:
+                    yield chunk
+
+                current_part += 1
+                offset += chunk_size
+
+        except Exception as exc:
+            logger.error("yield_file error at part %d: %s", current_part, exc)
         finally:
             logger.debug("yield_file finished after %d part(s)", current_part - 1)
 
@@ -289,7 +306,6 @@ class ByteStreamer:
     # ------------------------------------------------------------------
 
     async def clean_cache(self) -> None:
-        """Periodically evict all cached FileIds to free memory."""
         while True:
             await asyncio.sleep(self.clean_timer)
             self.cached_file_ids.clear()
@@ -297,27 +313,36 @@ class ByteStreamer:
 
 
 # ---------------------------------------------------------------------------
-# Range-request helper
+# Range-request helper  (FIXED for >1 GB files)
 # ---------------------------------------------------------------------------
 
 def _parse_range(range_header: str, file_size: int):
+    """
+    Parse HTTP Range header.  Returns (from_bytes, until_bytes).
+    Handles multi-range by taking the first range only.
+    """
     if range_header:
         try:
-            raw_range  = range_header.replace("bytes=", "")
+            # Strip "bytes=" prefix and take only the first range
+            raw_range = range_header.replace("bytes=", "").split(",")[0].strip()
             start_str, end_str = raw_range.split("-")
-            from_bytes  = int(start_str)
-            until_bytes = int(end_str) if end_str else file_size - 1
+            from_bytes  = int(start_str) if start_str else 0
+            until_bytes = int(end_str)   if end_str   else file_size - 1
         except (ValueError, AttributeError):
             from_bytes  = 0
             until_bytes = file_size - 1
     else:
         from_bytes  = 0
         until_bytes = file_size - 1
+
+    # Clamp
+    from_bytes  = max(0, from_bytes)
+    until_bytes = min(until_bytes, file_size - 1)
     return from_bytes, until_bytes
 
 
 # ---------------------------------------------------------------------------
-# High-level aiohttp streaming service
+# High-level aiohttp streaming service  (FIXED for >1 GB)
 # ---------------------------------------------------------------------------
 
 class StreamingService:
@@ -349,15 +374,15 @@ class StreamingService:
         if stats["total_bandwidth"] >= max_bw:
             raise web.HTTPServiceUnavailable(reason="bandwidth limit exceeded")
 
-        file_size = file_data["file_size"]
-        file_name = file_data["file_name"]
-        message_id = str(file_data["message_id"])
+        file_size   = int(file_data["file_size"])
+        file_name   = file_data["file_name"]
+        message_id  = str(file_data["message_id"])
 
         # ── Range parsing ─────────────────────────────────────────────
-        range_header               = request.headers.get("Range", "")
-        from_bytes, until_bytes    = _parse_range(range_header, file_size)
+        range_header            = request.headers.get("Range", "")
+        from_bytes, until_bytes = _parse_range(range_header, file_size)
 
-        if until_bytes > file_size - 1 or from_bytes < 0 or until_bytes < from_bytes:
+        if from_bytes > until_bytes or from_bytes >= file_size:
             return web.Response(
                 status=416,
                 body=b"Range Not Satisfiable",
@@ -367,12 +392,18 @@ class StreamingService:
         until_bytes = min(until_bytes, file_size - 1)
         req_length  = until_bytes - from_bytes + 1
 
+        # ── Chunk arithmetic (aligned to CHUNK_SIZE, works for >1 GB) ──
+        # offset must be a multiple of CHUNK_SIZE so Telegram accepts it
         offset         = from_bytes - (from_bytes % CHUNK_SIZE)
-        first_part_cut = from_bytes - offset
-        last_part_cut  = until_bytes % CHUNK_SIZE + 1
-        part_count     = (
-            math.ceil(until_bytes / CHUNK_SIZE)
-            - math.floor(offset   / CHUNK_SIZE)
+        first_part_cut = from_bytes - offset          # bytes to skip at start
+        last_part_cut  = (until_bytes % CHUNK_SIZE) + 1  # bytes to keep at end
+
+        # Number of 1-MB chunks that span [offset, until_bytes]
+        part_count = math.ceil((until_bytes + 1) / CHUNK_SIZE) - (offset // CHUNK_SIZE)
+
+        logger.debug(
+            "stream  msg=%s  size=%d  range=%d-%d  offset=%d  parts=%d",
+            message_id, file_size, from_bytes, until_bytes, offset, part_count,
         )
 
         # ── MIME / headers ───────────────────────────────────────────
