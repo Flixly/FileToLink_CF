@@ -15,13 +15,6 @@ FILE_TYPE_DOCUMENT = "document"
 
 STREAMABLE_TYPES = [FILE_TYPE_VIDEO, FILE_TYPE_AUDIO]
 
-MIME_TYPE_MAP = {
-    FILE_TYPE_VIDEO:    "video/mp4",
-    FILE_TYPE_AUDIO:    "audio/mpeg",
-    FILE_TYPE_IMAGE:    "image/jpeg",
-    FILE_TYPE_DOCUMENT: "application/octet-stream",
-}
-
 
 async def check_access(user_id: int) -> bool:
     from database import db
@@ -124,12 +117,31 @@ async def file_handler(client: Client, message: Message):
         )
     except Exception as exc:
         logger.error("failed to send_cached_media to dump channel: user=%s err=%s", user_id, exc)
-        await client.send_message(
-            chat_id=message.chat.id,
-            text=f"❌ ᴇʀʀᴏʀ ꜰᴏʀᴡᴀʀᴅɪɴɢ ᴛᴏ ᴄʜᴀɴɴᴇʟ: {exc}",
-            reply_to_message_id=message.id,
+        await processing_msg.edit_text(
+            f"❌ *{small_caps('failed to process file')}*\n\n"
+            f"ᴄᴏᴜʟᴅ ɴᴏᴛ ꜰᴏʀᴡᴀʀᴅ ꜰɪʟᴇ ᴛᴏ ꜱᴛᴏʀᴀɢᴇ.\n"
+            f"`{exc}`"
         )
-        await processing_msg.delete()
+        return
+
+    # Verify the forwarded message actually contains media before saving
+    media = (
+        getattr(file_info, "document", None)
+        or getattr(file_info, "video", None)
+        or getattr(file_info, "audio", None)
+        or getattr(file_info, "photo", None)
+    )
+    if not media:
+        logger.error("send_cached_media returned message with no media: user=%s msg_id=%s", user_id, file_info.id)
+        try:
+            await client.delete_messages(Config.DUMP_CHAT_ID, file_info.id)
+        except Exception:
+            pass
+        await processing_msg.edit_text(
+            f"❌ *{small_caps('file processing failed')}*\n\n"
+            f"ꜰɪʟᴇ ᴄᴏᴜʟᴅ ɴᴏᴛ ʙᴇ ʀᴇᴀᴅ ꜰʀᴏᴍ ᴛᴇʟᴇɢʀᴀᴍ ᴀꜰᴛᴇʀ ꜰᴏʀᴡᴀʀᴅɪɴɢ.\n"
+            f"ᴛʜɪꜱ ᴜꜱᴜᴀʟʟʏ ʜᴀᴘᴘᴇɴꜱ ᴡɪᴛʜ ᴠᴇʀʏ ʟᴀʀɢᴇ ꜰɪʟᴇꜱ. ᴘʟᴇᴀꜱᴇ ᴛʀʏ ᴀɢᴀɪɴ."
+        )
         return
 
     file_hash = Cryptic.hash_file_id(str(file_info.id))
@@ -354,7 +366,6 @@ async def stats_command(client: Client, message: Message):
             f"📊 *{small_caps('bot statistics')}*\n\n"
             f"📂 *{small_caps('total files')}:* `{stats['total_files']}`\n"
             f"👥 *{small_caps('total users')}:* `{stats['total_users']}`\n"
-            f"📥 *{small_caps('total downloads')}:* `{stats['total_downloads']}`\n"
             f"📊 *{small_caps('total bandwidth')}:* `{format_size(stats['total_bandwidth'])}`\n"
             f"📊 *{small_caps('today bandwidth')}:* `{format_size(stats['today_bandwidth'])}`"
         ),
