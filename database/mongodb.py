@@ -1,6 +1,6 @@
 from motor.motor_asyncio import AsyncIOMotorClient
 from datetime import datetime
-from typing import Optional, List, Dict
+from typing import Dict, List, Optional
 import logging
 
 logger = logging.getLogger(__name__)

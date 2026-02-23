@@ -1,6 +1,5 @@
 import hmac
 import hashlib
-import secrets
 from config import Config
 
 

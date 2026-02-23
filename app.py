@@ -72,12 +72,11 @@ def build_app(bot: Bot, database) -> web.Application:
         try:
             stats = await database.get_stats()
             return {
-                "bot_name":        "FileStream Bot",
-                "bot_username":    Config.BOT_USERNAME or "filestream_bot",
-                "owner_username":  "FLiX_LY",
-                "total_files":     stats["total_files"],
-                "total_users":     stats["total_users"],
-                "total_downloads": stats["total_downloads"],
+                "bot_name":       "FileStream Bot",
+                "bot_username":   Config.BOT_USERNAME or "filestream_bot",
+                "owner_username": "FLiX_LY",
+                "total_files":    stats["total_files"],
+                "total_users":    stats["total_users"],
             }
         except Exception as exc:
             logger.error("home page error: %s", exc)
@@ -119,7 +118,6 @@ def build_app(bot: Bot, database) -> web.Application:
             "file_name":      file_data["file_name"],
             "file_size":      format_size(file_data["file_size"]),
             "file_type":      file_type,
-            "downloads":      file_data.get("downloads", 0),
             "stream_url":     f"{base}/stream/{file_hash}",
             "download_url":   f"{base}/dl/{file_hash}",
             "telegram_url":   f"https://t.me/{Config.BOT_USERNAME}?start={file_hash}",

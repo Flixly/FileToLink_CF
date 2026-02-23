@@ -3,7 +3,6 @@ import logging
 
 from pyrogram import Client, filters, StopPropagation
 from pyrogram.enums import ChatMemberStatus
-from pyrogram.errors import UserNotParticipant, ChatAdminRequired
 from pyrogram.types import (
     CallbackQuery,
     InlineKeyboardButton,
@@ -45,49 +44,6 @@ async def check_owner(client: Client, event) -> bool:
             )
         return False
     return True
-
-
-async def is_member(client, message, target_id: int = None) -> bool:
-    check_id = target_id or Config.get("fsub_chat_id", 0)
-    if check_id == 0:
-        return True
-
-    enforce_fsub = target_id is None and Config.get("fsub_mode", False)
-    if target_id is None and not enforce_fsub:
-        return True
-
-    try:
-        member = await client.get_chat_member(check_id, message.from_user.id)
-        return member.status in (
-            ChatMemberStatus.MEMBER,
-            ChatMemberStatus.ADMINISTRATOR,
-            ChatMemberStatus.OWNER,
-        )
-
-    except UserNotParticipant:
-        if target_id is None:
-            await client.send_photo(
-                chat_id=message.chat.id,
-                photo="https://t.me/FLiX_Logos/331",
-                caption=(
-                    f"ʜᴇʏ **{message.from_user.mention}**,\n\n"
-                    "🧩 ᴛᴏ ᴜɴʟᴏᴄᴋ ᴍʏ ғᴜʟʟ ғᴇᴀᴛᴜʀᴇ ꜱᴇᴛ,\n"
-                    "ʏᴏᴜ ɴᴇᴇᴅ ᴛᴏ ᴊᴏɪɴ ᴏᴜʀ ᴜᴘᴅᴀᴛᴇꜱ ᴄʜᴀɴɴᴇʟ ꜰɪʀꜱᴛ!\n\n"
-                    "🚀 ᴊᴏɪɴ ɴᴏᴡ, ᴛʜᴇɴ ʜɪᴛ **/start** ᴛᴏ ᴄᴏɴᴛɪɴᴜᴇ ʏᴏᴜʀ ᴍɪꜱꜱɪᴏɴ."
-                ),
-                reply_markup=InlineKeyboardMarkup(
-                    [[InlineKeyboardButton("✨ ᴊᴏɪɴ ᴜᴘᴅᴀᴛᴇꜱ ✨", url=Config.get("fsub_inv_link"))]]
-                ),
-            )
-        return False
-
-    except ChatAdminRequired:
-        logger.warning(f"Bot lacks permission to check is_member in chat {check_id}.")
-        return True
-
-    except Exception as e:
-        logger.error(f"Membership check failed for user {message.from_user.id} in chat {check_id}: {e}")
-        return True
 
 
 # ═══════════════════════════════════════════════════════════════════════════ #
@@ -776,8 +732,7 @@ async def cb_about(client: Client, callback: CallbackQuery):
         f"ℹ️ *{small_caps('about filestream bot')}*\n\n"
         f"🤖 *{small_caps('bot')}:* @{Config.BOT_USERNAME}\n"
         f"📊 *{small_caps('files')}:* {stats['total_files']}\n"
-        f"👥 *{small_caps('users')}:* {stats['total_users']}\n"
-        f"📥 *{small_caps('downloads')}:* {stats['total_downloads']}\n\n"
+        f"👥 *{small_caps('users')}:* {stats['total_users']}\n\n"
         f"💻 *{small_caps('developer')}:* @FLiX_LY\n"
         f"⚡ *{small_caps('version')}:* 2.1"
     )
