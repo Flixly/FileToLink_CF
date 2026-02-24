@@ -1,9 +1,15 @@
 import logging
 
 from pyrogram import Client, filters
-from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
+from pyrogram.types import (
+    CallbackQuery,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    Message,
+)
 
 from config import Config
+from database import db
 from helper import small_caps, format_size, escape_markdown, check_fsub
 
 logger = logging.getLogger(__name__)
@@ -11,8 +17,6 @@ logger = logging.getLogger(__name__)
 
 @Client.on_message(filters.command("start") & filters.private, group=1)
 async def start_command(client: Client, message: Message):
-    from database import db
-
     user    = message.from_user
     user_id = user.id
 
@@ -127,7 +131,11 @@ async def start_command(client: Client, message: Message):
     if user_id in Config.OWNER_ID:
         start_text += (
             f"\n\n**{small_caps('owner commands')}:**\n"
+            "`/adminstats`   — 🔐 ꜰᴜʟʟ ᴀᴅᴍɪɴ ꜱᴛᴀᴛꜱ\n"
             "`/bot_settings` — ⚙️ ꜰᴜʟʟ ꜱᴇᴛᴛɪɴɢꜱ ᴘᴀɴᴇʟ\n"
+            "`/files <id>`   — 📂 ᴠɪᴇᴡ ᴀɴʏ ᴜꜱᴇʀ'ꜱ ꜰɪʟᴇꜱ\n"
+            "`/revoke <hash>` — 🗑️ ʀᴇᴠᴏᴋᴇ ꜰɪʟᴇ ʙʏ ʜᴀꜱʜ\n"
+            "`/revokeall <id>` — 🗑️ ʀᴇᴠᴏᴋᴇ ᴀʟʟ ꜰɪʟᴇꜱ ᴏꜰ ᴜꜱᴇʀ\n"
             "`/revokeall`    — 🗑️ ᴅᴇʟᴇᴛᴇ ᴀʟʟ ꜰɪʟᴇꜱ\n"
             "`/logs`         — 📋 ᴠɪᴇᴡ ʙᴏᴛ ʟᴏɢꜱ"
         )
@@ -215,6 +223,7 @@ async def about_command(client: Client, message: Message):
         ]]),
     )
 
+
 @Client.on_callback_query(filters.regex(r"^start$"), group=2)
 async def cb_start(client: Client, callback: CallbackQuery):
     text = (
@@ -266,5 +275,3 @@ async def cb_about(client: Client, callback: CallbackQuery):
         ]]),
     )
     await callback.answer()
-
-

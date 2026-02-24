@@ -91,12 +91,25 @@ class Database:
             return 0
 
     async def get_user_files(self, user_id: str, limit: int = 50) -> List[Dict]:
+        """Return files for a user.  limit=0 means return all files."""
         try:
-            cursor = self.files.find({"user_id": user_id}).sort("created_at", -1).limit(limit)
-            return await cursor.to_list(length=limit)
+            cursor = self.files.find({"user_id": user_id}).sort("created_at", -1)
+            if limit and limit > 0:
+                cursor = cursor.limit(limit)
+                return await cursor.to_list(length=limit)
+            return await cursor.to_list(length=None)
         except Exception as e:
             logger.error("get user files error: %s", e)
             return []
+
+    async def delete_user_files(self, user_id: str) -> int:
+        """Delete all files belonging to a specific user. Returns the number deleted."""
+        try:
+            result = await self.files.delete_many({"user_id": str(user_id)})
+            return result.deleted_count
+        except Exception as e:
+            logger.error("delete user files error: %s", e)
+            return 0
 
     async def update_bandwidth(self, size: int) -> bool:
         try:
@@ -234,6 +247,14 @@ class Database:
         except Exception as e:
             logger.error("get sudo users error: %s", e)
             return []
+
+    async def get_user_count(self) -> int:
+        """Return total registered users count."""
+        try:
+            return await self.users.count_documents({})
+        except Exception as e:
+            logger.error("get user count error: %s", e)
+            return 0
 
     async def close(self):
         self.client.close()
