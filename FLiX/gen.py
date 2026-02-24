@@ -604,28 +604,3 @@ async def cb_back_to_files(client: Client, callback: CallbackQuery):
     )
     await callback.answer()
 
-
-# ── Public stats (/stats — accessible by allowed users) ──────────────────────
-@Client.on_message(filters.command("stats") & filters.private, group=0)
-async def stats_command(client: Client, message: Message):
-    user_id = message.from_user.id
-
-    if not await check_access(user_id):
-        await client.send_message(
-            chat_id=message.chat.id,
-            text=f"❌ **{small_caps('access forbidden')}**",
-            reply_to_message_id=message.id,
-        )
-        return
-
-    stats = await db.get_stats()
-    await client.send_message(
-        chat_id=message.chat.id,
-        text=(
-            f"📊 **{small_caps('bot statistics')}**\n\n"
-            f"📂 **{small_caps('total files')}:** `{stats['total_files']}`\n"
-            f"📡 **{small_caps('total bandwidth')}:** `{format_size(stats['total_bandwidth'])}`\n"
-            f"📅 **{small_caps('today bandwidth')}:** `{format_size(stats['today_bandwidth'])}`"
-        ),
-        reply_to_message_id=message.id,
-    )

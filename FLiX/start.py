@@ -124,8 +124,7 @@ async def start_command(client: Client, message: Message):
         f"**{small_caps('commands')}:**\n"
         "`/help`  — ɢᴇᴛ ʜᴇʟᴘ\n"
         "`/about` — ᴀʙᴏᴜᴛ ᴛʜɪꜱ ʙᴏᴛ\n"
-        "`/files` — ᴠɪᴇᴡ ʏᴏᴜʀ ꜰɪʟᴇꜱ\n"
-        "`/stats` — ᴠɪᴇᴡ ꜱᴛᴀᴛɪꜱᴛɪᴄꜱ"
+        "`/files` — ᴠɪᴇᴡ ʏᴏᴜʀ ꜰɪʟᴇꜱ"
     )
 
     if user_id in Config.OWNER_ID:
@@ -182,7 +181,6 @@ async def help_command(client: Client, message: Message):
         f"**{small_caps('commands')}:**\n"
         "`/start`  — ꜱᴛᴀʀᴛ ᴛʜᴇ ʙᴏᴛ\n"
         "`/files`  — ᴠɪᴇᴡ ʏᴏᴜʀ ꜰɪʟᴇꜱ\n"
-        "`/stats`  — ʙᴏᴛ ꜱᴛᴀᴛɪꜱᴛɪᴄꜱ\n"
         "`/about`  — ᴀʙᴏᴜᴛ ᴛʜɪꜱ ʙᴏᴛ\n\n"
         f"💡 **{small_caps('tip')}:** ᴜꜱᴇ `/revoke <file_hash>` ᴛᴏ ᴅᴇʟᴇᴛᴇ ʏᴏᴜʀ ꜰɪʟᴇꜱ"
     )
