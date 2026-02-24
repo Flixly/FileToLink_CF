@@ -1,5 +1,7 @@
 import asyncio
 import logging
+import os
+import time
 
 from pyrogram import Client, filters, StopPropagation
 from pyrogram.enums import ChatMemberStatus
@@ -11,10 +13,42 @@ from pyrogram.types import (
 )
 
 from config import Config
+from database import db
 from helper import small_caps, format_size, escape_markdown
 
 logger = logging.getLogger(__name__)
 
+# ── Bot start time (module load = bot start) ──────────────────────────────────
+_BOT_START_TIME: float = time.time()
+
+
+# ════════════════════════════════════════════════════════════════════════════ #
+#  Helpers                                                                     #
+# ════════════════════════════════════════════════════════════════════════════ #
+
+def _format_uptime(seconds: float) -> str:
+    """Convert seconds into a human-readable uptime string."""
+    seconds = int(seconds)
+    days,    seconds = divmod(seconds, 86400)
+    hours,   seconds = divmod(seconds, 3600)
+    minutes, seconds = divmod(seconds, 60)
+    parts = []
+    if days:
+        parts.append(f"{days}d")
+    if hours:
+        parts.append(f"{hours}h")
+    if minutes:
+        parts.append(f"{minutes}m")
+    parts.append(f"{seconds}s")
+    return " ".join(parts)
+
+
+def _human_size(n: int) -> str:
+    for unit in ("B", "KB", "MB", "GB"):
+        if n < 1024:
+            return f"{n:.1f} {unit}"
+        n /= 1024
+    return f"{n:.1f} TB"
 
 
 async def check_owner(client: Client, event) -> bool:
@@ -36,10 +70,7 @@ async def check_owner(client: Client, event) -> bool:
     return True
 
 
-
 async def show_panel(client: Client, source, panel_type: str):
-    from database import db
-
     config = Config.all()
     msg    = source.message if isinstance(source, CallbackQuery) else source
 
@@ -165,6 +196,7 @@ async def show_panel(client: Client, source, panel_type: str):
         )
 
 
+# ── Pending input helper ──────────────────────────────────────────────────────
 _pending: dict[int, asyncio.Future] = {}
 
 
@@ -205,6 +237,10 @@ async def ask_input(
                     pass
 
 
+# ════════════════════════════════════════════════════════════════════════════ #
+#  /bot_settings                                                               #
+# ════════════════════════════════════════════════════════════════════════════ #
+
 @Client.on_message(filters.command("bot_settings") & filters.private, group=2)
 async def open_settings(client: Client, message: Message):
     if not await check_owner(client, message):
@@ -217,8 +253,6 @@ async def open_settings(client: Client, message: Message):
     group=2,
 )
 async def settings_callback(client: Client, callback: CallbackQuery):
-    from database import db
-
     data   = callback.data
     config = Config.all()
 
@@ -245,7 +279,7 @@ async def settings_callback(client: Client, callback: CallbackQuery):
             pass
         return
 
-    # ── Toggles ─────────────────────────────────────────────────────────
+    # ── Toggles ──────────────────────────────────────────────────────────
     if data == "toggle_bandwidth":
         new_val = not config.get("bandwidth_mode", True)
         await Config.update(db.db, {"bandwidth_mode": new_val})
@@ -265,7 +299,7 @@ async def settings_callback(client: Client, callback: CallbackQuery):
         await callback.answer("✅ Fᴏʀᴄᴇ ꜱᴜʙ ᴛᴏɢɢʟᴇᴅ!", show_alert=True)
         return await show_panel(client, callback, "fsub_panel")
 
-    # ── Bandwidth limit ──────────────────────────────────────────────────
+    # ── Bandwidth limit ───────────────────────────────────────────────────
     if data == "set_bandwidth_limit":
         text = await ask_input(
             client, callback.from_user.id,
@@ -286,7 +320,7 @@ async def settings_callback(client: Client, callback: CallbackQuery):
         await callback.answer(f"✅ Lɪᴍɪᴛ ꜱᴇᴛ ᴛᴏ {format_size(new_limit)}!", show_alert=True)
         return await show_panel(client, callback, "bandwidth_panel")
 
-    # ── Sudo add ─────────────────────────────────────────────────────────
+    # ── Sudo add ──────────────────────────────────────────────────────────
     if data == "sudo_add":
         text = await ask_input(
             client, callback.from_user.id,
@@ -301,7 +335,7 @@ async def settings_callback(client: Client, callback: CallbackQuery):
         await callback.answer(f"✅ `{text}` ᴀᴅᴅᴇᴅ ᴀꜱ ꜱᴜᴅᴏ!", show_alert=True)
         return await show_panel(client, callback, "sudo_panel")
 
-    # ── Sudo remove ──────────────────────────────────────────────────────
+    # ── Sudo remove ───────────────────────────────────────────────────────
     if data == "sudo_remove":
         text = await ask_input(
             client, callback.from_user.id,
@@ -316,7 +350,7 @@ async def settings_callback(client: Client, callback: CallbackQuery):
             await callback.answer(f"❌ `{text}` ɴᴏᴛ ꜰᴏᴜɴᴅ ɪɴ ꜱᴜᴅᴏ ʟɪꜱᴛ.", show_alert=True)
         return await show_panel(client, callback, "sudo_panel")
 
-    # ── Force-sub settings ───────────────────────────────────────────────
+    # ── Force-sub settings ────────────────────────────────────────────────
     if data == "set_fsub_id":
         text = await ask_input(
             client, callback.from_user.id,
@@ -386,11 +420,51 @@ async def settings_callback(client: Client, callback: CallbackQuery):
         return
 
 
+# ════════════════════════════════════════════════════════════════════════════ #
+#  /adminstats  (owner-only: uptime, bandwidth, users, files)                  #
+# ════════════════════════════════════════════════════════════════════════════ #
+
+@Client.on_message(filters.command("adminstats") & filters.private, group=2)
+async def adminstats_command(client: Client, message: Message):
+    if not await check_owner(client, message):
+        return
+
+    uptime_str = _format_uptime(time.time() - _BOT_START_TIME)
+    stats      = await db.get_stats()
+    bw_stats   = await db.get_bandwidth_stats()
+
+    max_bw      = Config.get("max_bandwidth", 107374182400)
+    bw_used     = bw_stats["total_bandwidth"]
+    bw_today    = bw_stats["today_bandwidth"]
+    bw_pct      = (bw_used / max_bw * 100) if max_bw else 0
+    bw_mode     = "🟢 ᴀᴄᴛɪᴠᴇ" if Config.get("bandwidth_mode", True) else "🔴 ɪɴᴀᴄᴛɪᴠᴇ"
+
+    text = (
+        f"📊 **{small_caps('admin statistics')}**\n\n"
+        f"⏱️ **{small_caps('uptime')}:**         `{uptime_str}`\n\n"
+        f"👥 **{small_caps('total users')}:**     `{stats['total_users']}`\n"
+        f"📂 **{small_caps('total files')}:**     `{stats['total_files']}`\n\n"
+        f"📡 **{small_caps('bandwidth mode')}:**  {bw_mode}\n"
+        f"📶 **{small_caps('bw limit')}:**        `{format_size(max_bw)}`\n"
+        f"📤 **{small_caps('bw used total')}:**   `{format_size(bw_used)}` "
+        f"({bw_pct:.1f}%)\n"
+        f"📅 **{small_caps('bw used today')}:**   `{format_size(bw_today)}`\n"
+        f"⬇️ **{small_caps('downloads today')}:** `{bw_stats['today_downloads']}`"
+    )
+
+    await client.send_message(
+        chat_id=message.chat.id,
+        text=text,
+        reply_to_message_id=message.id,
+    )
+
+
+# ════════════════════════════════════════════════════════════════════════════ #
+#  /revoke <file_hash>  (owner — revoke a single file by hash)                 #
+# ════════════════════════════════════════════════════════════════════════════ #
 
 @Client.on_message(filters.command("revoke") & filters.private, group=0)
 async def revoke_command(client: Client, message: Message):
-    from database import db
-
     user_id = message.from_user.id
 
     if not await check_owner(client, message):
@@ -439,11 +513,69 @@ async def revoke_command(client: Client, message: Message):
     )
 
 
+# ════════════════════════════════════════════════════════════════════════════ #
+#  /revokeall [user_id]  (owner)                                               #
+#  - No argument  → revoke ALL files (global, with confirmation)               #
+#  - With user_id → revoke all files belonging to that specific user           #
+# ════════════════════════════════════════════════════════════════════════════ #
 
 @Client.on_message(filters.command("revokeall") & filters.private, group=2)
 async def revokeall_command(client: Client, message: Message):
-    from database import db
+    if not await check_owner(client, message):
+        return
 
+    # ── Per-user bulk revoke: /revokeall <user_id> ───────────────────────
+    if len(message.command) > 1:
+        raw = message.command[1]
+        if not raw.lstrip("-").isdigit():
+            await client.send_message(
+                chat_id=message.chat.id,
+                text=(
+                    f"❌ **{small_caps('invalid user id')}**\n\n"
+                    "ᴜꜱᴀɢᴇ: `/revokeall <user_id>`"
+                ),
+                reply_to_message_id=message.id,
+            )
+            return
+
+        target_id = raw
+        files     = await db.get_user_files(target_id, limit=0)  # 0 = all
+        count     = len(files)
+
+        if count == 0:
+            await client.send_message(
+                chat_id=message.chat.id,
+                text=f"📂 ɴᴏ ꜰɪʟᴇꜱ ꜰᴏᴜɴᴅ ꜰᴏʀ ᴜꜱᴇʀ `{target_id}`.",
+                reply_to_message_id=message.id,
+            )
+            return
+
+        await client.send_message(
+            chat_id=message.chat.id,
+            text=(
+                f"⚠️ **Warning**\n\n"
+                f"ᴛʜɪꜱ ᴡɪʟʟ ᴘᴇʀᴍᴀɴᴇɴᴛʟʏ ᴅᴇʟᴇᴛᴇ **{count}** ꜰɪʟᴇꜱ "
+                f"ʙᴇʟᴏɴɢɪɴɢ ᴛᴏ ᴜꜱᴇʀ `{target_id}`.\n"
+                "ᴀʟʟ ꜱᴛʀᴇᴀᴍ/ᴅᴏᴡɴʟᴏᴀᴅ ʟɪɴᴋꜱ ᴡɪʟʟ ʙᴇᴄᴏᴍᴇ ɪɴᴠᴀʟɪᴅ.\n\n"
+                "ᴀʀᴇ ʏᴏᴜ ꜱᴜʀᴇ?"
+            ),
+            reply_to_message_id=message.id,
+            reply_markup=InlineKeyboardMarkup([
+                [
+                    InlineKeyboardButton(
+                        "✅ ᴄᴏɴꜰɪʀᴍ",
+                        callback_data=f"revokeuser_confirm_{target_id}",
+                    ),
+                    InlineKeyboardButton(
+                        "❌ ᴄᴀɴᴄᴇʟ",
+                        callback_data="revokeall_cancel",
+                    ),
+                ]
+            ]),
+        )
+        return
+
+    # ── Global bulk revoke: /revokeall (no args) ─────────────────────────
     stats       = await db.get_stats()
     total_files = stats["total_files"]
 
@@ -475,8 +607,6 @@ async def revokeall_command(client: Client, message: Message):
 
 @Client.on_callback_query(filters.regex(r"^revokeall_(confirm|cancel)$"), group=2)
 async def revokeall_callback(client: Client, callback: CallbackQuery):
-    from database import db
-
     if not await check_owner(client, callback):
         return
 
@@ -504,13 +634,41 @@ async def revokeall_callback(client: Client, callback: CallbackQuery):
         pass
 
 
-# ═══════════════════════════════════════════════════════════════════════════ #
-#  /logs  (sends the log file as a document)                                  #
-# ═══════════════════════════════════════════════════════════════════════════ #
+# ── Confirm per-user bulk revoke ──────────────────────────────────────────────
+@Client.on_callback_query(filters.regex(r"^revokeuser_confirm_"), group=2)
+async def revokeuser_confirm_callback(client: Client, callback: CallbackQuery):
+    if not await check_owner(client, callback):
+        return
+
+    target_id = callback.data.replace("revokeuser_confirm_", "", 1)
+
+    await callback.answer("🗑️ ᴅᴇʟᴇᴛɪɴɢ…", show_alert=False)
+    try:
+        await callback.message.edit_text(
+            f"🗑️ ᴅᴇʟᴇᴛɪɴɢ ᴀʟʟ ꜰɪʟᴇꜱ ꜰᴏʀ ᴜꜱᴇʀ `{target_id}`…"
+        )
+    except Exception:
+        pass
+
+    deleted_count = await db.delete_user_files(target_id)
+    try:
+        await callback.message.edit_text(
+            f"🗑️ **Done!**\n\n"
+            f"ᴅᴇʟᴇᴛᴇᴅ `{deleted_count}` ꜰɪʟᴇꜱ ꜱᴜᴄᴄᴇꜱꜱꜰᴜʟʟʏ "
+            f"ꜰᴏʀ ᴜꜱᴇʀ `{target_id}`."
+        )
+    except Exception:
+        pass
+
+
+# ════════════════════════════════════════════════════════════════════════════ #
+#  /logs  (owner — sends the log file as a document)                           #
+# ════════════════════════════════════════════════════════════════════════════ #
 
 @Client.on_message(filters.command("logs") & filters.private, group=2)
 async def logs_command(client: Client, message: Message):
-    import os
+    if not await check_owner(client, message):
+        return
 
     log_file = "bot.log"
 
@@ -523,7 +681,6 @@ async def logs_command(client: Client, message: Message):
         return
 
     try:
-        # Send the full log file as a document
         await client.send_document(
             chat_id=message.chat.id,
             document=log_file,
@@ -537,7 +694,6 @@ async def logs_command(client: Client, message: Message):
         )
     except Exception as exc:
         logger.error("logs_command send document error: %s", exc)
-        # Fallback: send last 4 000 chars as text
         try:
             with open(log_file, "r", encoding="utf-8", errors="replace") as fh:
                 tail = fh.read()[-4000:]
@@ -553,12 +709,3 @@ async def logs_command(client: Client, message: Message):
                 text=f"❌ **Error reading logs:** `{exc2}`",
                 reply_to_message_id=message.id,
             )
-
-
-def _human_size(n: int) -> str:
-    for unit in ("B", "KB", "MB", "GB"):
-        if n < 1024:
-            return f"{n:.1f} {unit}"
-        n /= 1024
-    return f"{n:.1f} TB"
-
