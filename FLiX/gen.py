@@ -840,7 +840,7 @@ async def inline_query_handler(client: Client, inline_query):
                 photo_url=stream_link,
                 thumb_url=stream_link,
                 title=f"{file_data['file_name']}",
-                description=small_caps(f"image • {fmt_size}")},
+                description=small_caps(f"image • {fmt_size}"),
                 caption=text,
                 disable_web_page_preview=True,
                 reply_markup=markup,
@@ -851,7 +851,7 @@ async def inline_query_handler(client: Client, inline_query):
     if result_item is None:
         result_item = InlineQueryResultArticle(
             title=f"{file_data['file_name']}",
-            description=small_caps(f"{file_type} • {fmt_size}")},
+            description=small_caps(f"{file_type} • {fmt_size}"),
             input_message_content=InputTextMessageContent(
                 message_text=text,
                 disable_web_page_preview=True,
