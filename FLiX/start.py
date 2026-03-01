@@ -15,47 +15,59 @@ from helper import small_caps, format_size, escape_markdown, check_fsub
 logger = logging.getLogger(__name__)
 
 
-def _start_content(first_name: str) -> tuple[str, InlineKeyboardMarkup]:
-    text = (
-        f"👋 **Hello {first_name}**,\n\n"
-        f"ɪ ᴀᴍ ᴀ **{small_caps('premium file stream bot')}**.\n\n"
-        f"📂 **{small_caps('send me any file')}** (ᴠɪᴅᴇᴏ, ᴀᴜᴅɪᴏ, ᴅᴏᴄᴜᴍᴇɴᴛ) "
-        "ᴀɴᴅ ɪ ᴡɪʟʟ ɢᴇɴᴇʀᴀᴛᴇ ᴀ ᴅɪʀᴇᴄᴛ ᴅᴏᴡɴʟᴏᴀᴅ ᴀɴᴅ ꜱᴛʀᴇᴀᴍɪɴɢ ʟɪɴᴋ ꜰᴏʀ ʏᴏᴜ."
-    )
-    markup = InlineKeyboardMarkup([[
-        InlineKeyboardButton(f"📚 {small_caps('help')}",  callback_data="help"),
-        InlineKeyboardButton(f"ℹ️ {small_caps('about')}", callback_data="about"),
-    ]])
-    return text, markup
+def show_nav(page: str, user=None) -> tuple[str, InlineKeyboardMarkup]:
 
+    mention = getattr(user, "mention", "user") if user else "user"
 
-def _help_content() -> tuple[str, InlineKeyboardMarkup]:
-    text = (
-        f"📚 **{small_caps('help & guide')}**\n\n"
-        f"**{small_caps('how to use')}:**\n"
-        "1️⃣ ꜱᴇɴᴅ ᴀɴʏ ꜰɪʟᴇ ᴛᴏ ᴛʜᴇ ʙᴏᴛ\n"
-        "2️⃣ ɢᴇᴛ ɪɴꜱᴛᴀɴᴛ ꜱᴛʀᴇᴀᴍ & ᴅᴏᴡɴʟᴏᴀᴅ ʟɪɴᴋꜱ\n"
-        "3️⃣ ꜱʜᴀʀᴇ ʟɪɴᴋꜱ ᴀɴʏᴡʜᴇʀᴇ!\n\n"
-        f"**{small_caps('supported files')}:**\n"
-        "🎬 ᴠɪᴅᴇᴏꜱ\n🎵 ᴀᴜᴅɪᴏ\n📄 ᴅᴏᴄᴜᴍᴇɴᴛꜱ\n🖼️ ɪᴍᴀɢᴇꜱ"
-    )
-    markup = InlineKeyboardMarkup([[
-        InlineKeyboardButton(f"🏠 {small_caps('home')}", callback_data="start"),
-    ]])
-    return text, markup
+    if page == "start":
+        text = (
+            f"👋 **ʜᴇʟʟᴏ {mention}**,\n\n"
+            "ɪ ᴀᴍ ᴀ ᴘʀᴇᴍɪᴜᴍ ꜰɪʟᴇ ꜱᴛʀᴇᴀᴍ ʙᴏᴛ.\n\n"
+            "📂 **ꜱᴇɴᴅ ᴍᴇ ᴀɴʏ ꜰɪʟᴇ** "
+            "(ᴠɪᴅᴇᴏ, ᴀᴜᴅɪᴏ, ᴅᴏᴄᴜᴍᴇɴᴛ) ᴀɴᴅ ɪ ᴡɪʟʟ ɢᴇɴᴇʀᴀᴛᴇ ᴀ ᴅɪʀᴇᴄᴛ "
+            "ᴅᴏᴡɴʟᴏᴀᴅ ᴀɴᴅ ꜱᴛʀᴇᴀᴍɪɴɢ ʟɪɴᴋ ꜰᴏʀ ʏᴏᴜ."
+        )
 
+        buttons = [[
+            InlineKeyboardButton("📚 ʜᴇʟᴘ", callback_data="help"),
+            InlineKeyboardButton("ℹ️ ᴀʙᴏᴜᴛ", callback_data="about"),
+        ]]
 
-def _about_content() -> tuple[str, InlineKeyboardMarkup]:
-    text = (
-        f"ℹ️ **{small_caps('about filestream bot')}**\n\n"
-        f"🤖 **{small_caps('bot')}:** @{Config.BOT_USERNAME}\n\n"
-        f"💻 **{small_caps('developer')}:** @FLiX_LY\n"
-        f"⚡ **{small_caps('version')}:** 2.1"
-    )
-    markup = InlineKeyboardMarkup([[
-        InlineKeyboardButton(f"🏠 {small_caps('home')}", callback_data="start"),
-    ]])
-    return text, markup
+    elif page == "help":
+        text = (
+            "📚 **ʜᴇʟᴘ & ɢᴜɪᴅᴇ**\n\n"
+            "**ʜᴏᴡ ᴛᴏ ᴜꜱᴇ:**\n"
+            "1️⃣ ꜱᴇɴᴅ ᴀɴʏ ꜰɪʟᴇ ᴛᴏ ᴛʜᴇ ʙᴏᴛ\n"
+            "2️⃣ ɢᴇᴛ ɪɴꜱᴛᴀɴᴛ ꜱᴛʀᴇᴀᴍ & ᴅᴏᴡɴʟᴏᴀᴅ ʟɪɴᴋꜱ\n"
+            "3️⃣ ꜱʜᴀʀᴇ ʟɪɴᴋꜱ ᴀɴʏᴡʜᴇʀᴇ!\n\n"
+            "**ꜱᴜᴘᴘᴏʀᴛᴇᴅ ꜰɪʟᴇꜱ:**\n"
+            "🎬 ᴠɪᴅᴇᴏꜱ\n"
+            "🎵 ᴀᴜᴅɪᴏ\n"
+            "📄 ᴅᴏᴄᴜᴍᴇɴᴛꜱ\n"
+            "🖼️ ɪᴍᴀɢᴇꜱ"
+        )
+
+        buttons = [[
+            InlineKeyboardButton("🏠 ʜᴏᴍᴇ", callback_data="start")
+        ]]
+
+    elif page == "about":
+        text = (
+            "ℹ️ **ᴀʙᴏᴜᴛ ꜰɪʟᴇꜱᴛʀᴇᴀᴍ ʙᴏᴛ**\n\n"
+            f"🤖 **ʙᴏᴛ:** @{Config.BOT_USERNAME}\n\n"
+            "💻 **ᴅᴇᴠᴇʟᴏᴘᴇʀ:** @FLiX_LY\n"
+            "⚡ **ᴠᴇʀꜱɪᴏɴ:** 2.1"
+        )
+
+        buttons = [[
+            InlineKeyboardButton("🏠 ʜᴏᴍᴇ", callback_data="start")
+        ]]
+
+    else:
+        text = "ɪɴᴠᴀʟɪᴅ ᴘᴀɢᴇ"
+        buttons = []
+
+    return text, InlineKeyboardMarkup(buttons)
 
 
 @Client.on_message(filters.command("start") & filters.private, group=1)
@@ -157,7 +169,7 @@ async def start_command(client: Client, message: Message):
             )
         return
 
-    start_text, buttons = _start_content(user.first_name)
+    text, buttons = show_nav("start", message.from_user)
 
     if Config.Start_IMG:
         try:
@@ -184,38 +196,49 @@ async def start_command(client: Client, message: Message):
 
 @Client.on_message(filters.command("help") & filters.private, group=1)
 async def help_command(client: Client, message: Message):
-    text, markup = _help_content()
+    text, buttons = show_nav("help", message.from_user)
     await client.send_message(
         chat_id=message.chat.id,
         text=text,
         reply_to_message_id=message.id,
-        reply_markup=markup,
+        reply_markup=buttons,
         disable_web_page_preview=True,
     )
 
 
 @Client.on_message(filters.command("about") & filters.private, group=1)
 async def about_command(client: Client, message: Message):
-    text, markup = _about_content()
+    text, buttons = show_nav("about", message.from_user)
     await client.send_message(
         chat_id=message.chat.id,
         text=text,
         reply_to_message_id=message.id,
-        reply_markup=markup,
+        reply_markup=buttons,
         disable_web_page_preview=True,
     )
 
 
 @Client.on_callback_query(filters.regex(r"^(start|help|about)$"), group=1)
 async def cb_info(client: Client, callback: CallbackQuery):
-    data = callback.data
+    text, markup = show_nav(callback.data, callback.from_user)
+    msg = callback.message
 
-    if data == "start":
-        text, markup = _start_content(callback.from_user.first_name)
-    elif data == "help":
-        text, markup = _help_content()
-    else:
-        text, markup = _about_content()
+    try:
+        if msg.photo or msg.video or msg.document or msg.animation:
+            await msg.edit_caption(
+                caption=text,
+                reply_markup=markup
+            )
+        else:
+            await msg.edit_text(
+                text=text,
+                reply_markup=markup
+            )
 
-    await callback.message.edit_text(text, reply_markup=markup)
+    except Exception:
+        await msg.reply(
+            text=text,
+            reply_markup=markup
+        )
+
     await callback.answer()
