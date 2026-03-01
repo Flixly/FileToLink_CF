@@ -176,10 +176,9 @@ async def start_command(client: Client, message: Message):
             await client.send_photo(
                 chat_id=message.chat.id,
                 photo=Config.Start_IMG,
-                caption=start_text,
+                caption=text,
                 reply_to_message_id=message.id,
                 reply_markup=buttons,
-                disable_web_page_preview=True,
             )
             return
         except Exception as exc:
@@ -187,7 +186,7 @@ async def start_command(client: Client, message: Message):
 
     await client.send_message(
         chat_id=message.chat.id,
-        text=start_text,
+        text=text,
         reply_to_message_id=message.id,
         reply_markup=buttons,
         disable_web_page_preview=True,
