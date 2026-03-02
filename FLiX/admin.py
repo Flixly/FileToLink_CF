@@ -27,11 +27,11 @@ async def show_panel(client: Client, source, panel_type: str):
         max_bw    = Config.get("max_bandwidth", 107374182400)
         bw_toggle = Config.get("bandwidth_mode", True)
         text = (
-            "✨ **Bᴏᴛ Sᴇᴛᴛɪɴɢꜱ Pᴀɴᴇʟ** ✨\n\n"
-            f"📡 **Bᴀɴᴅᴡɪᴅᴛʜ**  : {'🟢 ᴀᴄᴛɪᴠᴇ' if bw_toggle else '🔴 ɪɴᴀᴄᴛɪᴠᴇ'} | `{format_size(max_bw)}`\n"
-            f"👥 **Sᴜᴅᴏ Uꜱᴇʀꜱ** : ᴍᴀɴᴀɢᴇ ᴀᴄᴄᴇꜱꜱ\n"
-            f"🤖 **Bᴏᴛ Mᴏᴅᴇ**  : {'🟢 ᴘᴜʙʟɪᴄ' if config.get('public_bot') else '🔴 ᴘʀɪᴠᴀᴛᴇ'}\n"
-            f"📢 **Fᴏʀᴄᴇ Sᴜʙ** : {'🟢 ᴀᴄᴛɪᴠᴇ' if config.get('fsub_mode') else '🔴 ɪɴᴀᴄᴛɪᴠᴇ'}\n\n"
+            f"✨ **{small_caps('bot settings panel')}** ✨\n\n"
+            f"📡 **{small_caps('bandwidth')}**  : {'🟢 ᴀᴄᴛɪᴠᴇ' if bw_toggle else '🔴 ɪɴᴀᴄᴛɪᴠᴇ'} | `{format_size(max_bw)}`\n"
+            f"👥 **{small_caps('sudo users')}** : ᴍᴀɴᴀɢᴇ ᴀᴄᴄᴇꜱꜱ\n"
+            f"🤖 **{small_caps('bot mode')}**  : {'🟢 ᴘᴜʙʟɪᴄ' if config.get('public_bot') else '🔴 ᴘʀɪᴠᴀᴛᴇ'}\n"
+            f"📢 **{small_caps('force sub')}** : {'🟢 ᴀᴄᴛɪᴠᴇ' if config.get('fsub_mode') else '🔴 ɪɴᴀᴄᴛɪᴠᴇ'}\n\n"
             "👇 ᴄʜᴏᴏꜱᴇ ᴀ ᴄᴀᴛᴇɢᴏʀʏ ᴛᴏ ᴄᴏɴꜰɪɢᴜʀᴇ."
         )
         buttons = InlineKeyboardMarkup([
@@ -54,11 +54,11 @@ async def show_panel(client: Client, source, panel_type: str):
         bw_today  = bw_stats["today_bandwidth"]
         bw_pct    = (bw_used / max_bw * 100) if max_bw else 0
         text = (
-            "💠 **Bᴀɴᴅᴡɪᴅᴛʜ Sᴇᴛᴛɪɴɢꜱ** 💠\n\n"
-            f"⚡ **Mᴏᴅᴇ**       : {'🟢 ᴀᴄᴛɪᴠᴇ' if bw_toggle else '🔴 ɪɴᴀᴄᴛɪᴠᴇ'}\n"
-            f"📊 **Lɪᴍɪᴛ**      : `{format_size(max_bw)}`\n"
-            f"📤 **Uꜱᴇᴅ (ᴛᴏᴛᴀʟ)**: `{format_size(bw_used)}` ({bw_pct:.1f}%)\n"
-            f"📅 **Uꜱᴇᴅ ᴛᴏᴅᴀʏ** : `{format_size(bw_today)}`"
+            f"💠 **{small_caps('bandwidth settings')}** 💠\n\n"
+            f"⚡ **{small_caps('mode')}**       : {'🟢 ᴀᴄᴛɪᴠᴇ' if bw_toggle else '🔴 ɪɴᴀᴄᴛɪᴠᴇ'}\n"
+            f"📊 **{small_caps('limit')}**      : `{format_size(max_bw)}`\n"
+            f"📤 **{small_caps('used (total)')}**: `{format_size(bw_used)}` ({bw_pct:.1f}%)\n"
+            f"📅 **{small_caps('used today')}** : `{format_size(bw_today)}`"
         )
         buttons = InlineKeyboardMarkup([
             [InlineKeyboardButton("⚡ ᴛᴏɢɢʟᴇ",         callback_data="toggle_bandwidth")],
@@ -72,9 +72,9 @@ async def show_panel(client: Client, source, panel_type: str):
         count = len(sudo_users)
         lines = "\n".join(f"  • `{u['user_id']}`" for u in sudo_users) if sudo_users else "  ɴᴏɴᴇ"
         text = (
-            "💠 **Sᴜᴅᴏ Uꜱᴇʀꜱ** 💠\n\n"
-            f"👥 **Cᴏᴜɴᴛ** : `{count}`\n\n"
-            f"**Lɪꜱᴛ:**\n{lines}"
+            f"💠 **{small_caps('sudo users')}** 💠\n\n"
+            f"👥 **{small_caps('count')}** : `{count}`\n\n"
+            f"**{small_caps('list')}:**\n{lines}"
         )
         buttons = InlineKeyboardMarkup([
             [
@@ -87,14 +87,14 @@ async def show_panel(client: Client, source, panel_type: str):
     elif panel_type == "botmode_panel":
         public = config.get("public_bot", False)
         text = (
-            "💠 **Bᴏᴛ Mᴏᴅᴇ Sᴇᴛᴛɪɴɢꜱ** 💠\n\n"
-            f"⚡ **Cᴜʀʀᴇɴᴛ Mᴏᴅᴇ** : {'🌍 ᴘᴜʙʟɪᴄ' if public else '🔒 ᴘʀɪᴠᴀᴛᴇ'}\n\n"
-            "🌍 **Pᴜʙʟɪᴄ** — ᴀɴʏᴏɴᴇ ᴄᴀɴ ᴜꜱᴇ ᴛʜᴇ ʙᴏᴛ\n"
-            "🔒 **Pʀɪᴠᴀᴛᴇ** — ᴏɴʟʏ ꜱᴜᴅᴏ/ᴏᴡɴᴇʀ ᴄᴀɴ ᴜꜱᴇ"
+            f"💠 **{small_caps('bot mode settings')}** 💠\n\n"
+            f"⚡ **{small_caps('current mode')}** : {'🌍 ᴘᴜʙʟɪᴄ' if public else '🔒 ᴘʀɪᴠᴀᴛᴇ'}\n\n"
+            f"🌍 **{small_caps('public')}** — ᴀɴʏᴏɴᴇ ᴄᴀɴ ᴜꜱᴇ ᴛʜᴇ ʙᴏᴛ\n"
+            f"🔒 **{small_caps('private')}** — ᴏɴʟʏ ꜱᴜᴅᴏ/ᴏᴡɴᴇʀ ᴄᴀɴ ᴜꜱᴇ"
         )
         buttons = InlineKeyboardMarkup([
             [InlineKeyboardButton(
-                "🔓 ꜱᴇᴛ ᴘᴜʙʟɪᴄ" if not public else "🔒 ꜱᴇᴛ ᴘʀɪᴠᴀᴛᴇ",
+                f"🔓 {small_caps('set public')}" if not public else f"🔒 {small_caps('set private')}",
                 callback_data="toggle_botmode",
             )],
             [InlineKeyboardButton("⬅️ ʙᴀᴄᴋ", callback_data="settings_back")],
@@ -102,25 +102,25 @@ async def show_panel(client: Client, source, panel_type: str):
 
     elif panel_type == "fsub_panel":
         fsub_id   = config.get("fsub_chat_id", 0)
-        fsub_name = "Nᴏᴛ Sᴇᴛ"
+        fsub_name = "ɴᴏᴛ ꜱᴇᴛ"
         if fsub_id:
             try:
                 fsub_name = (await client.get_chat(fsub_id)).title
             except Exception:
-                fsub_name = "❓ Uɴᴋɴᴏᴡɴ"
+                fsub_name = "❓ ᴜɴᴋɴᴏᴡɴ"
 
         text = (
-            "💠 **Fᴏʀᴄᴇ Sᴜʙ Sᴇᴛᴛɪɴɢꜱ** 💠\n\n"
-            f"⚡ **Mᴏᴅᴇ**          : {'🟢 ᴀᴄᴛɪᴠᴇ' if config.get('fsub_mode') else '🔴 ɪɴᴀᴄᴛɪᴠᴇ'}\n"
-            f"🆔 **Cʜᴀɴɴᴇʟ Iᴅ**   : `{fsub_id or 'Nᴏᴛ Sᴇᴛ'}`\n"
-            f"📛 **Cʜᴀɴɴᴇʟ Nᴀᴍᴇ** : `{fsub_name}`\n"
-            f"🔗 **Iɴᴠɪᴛᴇ Lɪɴᴋ**  : `{config.get('fsub_inv_link') or 'Nᴏᴛ Sᴇᴛ'}`"
+            f"💠 **{small_caps('force sub settings')}** 💠\n\n"
+            f"⚡ **{small_caps('mode')}**          : {'🟢 ᴀᴄᴛɪᴠᴇ' if config.get('fsub_mode') else '🔴 ɪɴᴀᴄᴛɪᴠᴇ'}\n"
+            f"🆔 **{small_caps('channel id')}**   : `{fsub_id or 'ɴᴏᴛ ꜱᴇᴛ'}`\n"
+            f"📛 **{small_caps('channel name')}** : `{fsub_name}`\n"
+            f"🔗 **{small_caps('invite link')}**  : `{config.get('fsub_inv_link') or 'ɴᴏᴛ ꜱᴇᴛ'}`"
         )
         buttons = InlineKeyboardMarkup([
             [InlineKeyboardButton("⚡ ᴛᴏɢɢʟᴇ", callback_data="toggle_fsub")],
             [
-                InlineKeyboardButton("🆔 Cʜᴀɴɴᴇʟ Iᴅ", callback_data="set_fsub_id"),
-                InlineKeyboardButton("🔗 Iɴᴠɪᴛᴇ",      callback_data="set_fsub_link"),
+                InlineKeyboardButton(f"🆔 {small_caps('channel id')}", callback_data="set_fsub_id"),
+                InlineKeyboardButton(f"🔗 {small_caps('invite link')}",  callback_data="set_fsub_link"),
             ],
             [InlineKeyboardButton("⬅️ ʙᴀᴄᴋ", callback_data="settings_back")],
         ])
@@ -170,8 +170,7 @@ async def ask_input(
     ask_msg = None
     reply   = None
     try:
-        ask_msg = await client.send_message(user_id, prompt,
-        )
+        ask_msg = await client.send_message(user_id, prompt)
         reply   = await asyncio.wait_for(future, timeout=timeout)
         return reply.text.strip() if reply and reply.text else None
     except asyncio.TimeoutError:
@@ -209,11 +208,11 @@ async def settings_callback(client: Client, callback: CallbackQuery):
         return
 
     panel_nav = {
-        "settings_bandwidth": ("bandwidth_panel", "📡 ʙᴀɴᴅᴡɪᴅᴛʜ ꜱᴇᴛᴛɪɴɢꜱ"),
-        "settings_sudo":      ("sudo_panel",      "👥 ꜱᴜᴅᴏ ᴜꜱᴇʀꜱ"),
-        "settings_botmode":   ("botmode_panel",   "🤖 ʙᴏᴛ ᴍᴏᴅᴇ ꜱᴇᴛᴛɪɴɢꜱ"),
-        "settings_fsub":      ("fsub_panel",      "📌 ꜰᴏʀᴄᴇ ꜱᴜʙ ꜱᴇᴛᴛɪɴɢꜱ"),
-        "settings_back":      ("main_panel",      "⬅️ ʙᴀᴄᴋ ᴛᴏ ᴍᴀɪɴ ᴍᴇɴᴜ"),
+        "settings_bandwidth": ("bandwidth_panel", f"📡 {small_caps('bandwidth settings')}"),
+        "settings_sudo":      ("sudo_panel",      f"👥 {small_caps('sudo users')}"),
+        "settings_botmode":   ("botmode_panel",   f"🤖 {small_caps('bot mode settings')}"),
+        "settings_fsub":      ("fsub_panel",      f"📌 {small_caps('force sub settings')}"),
+        "settings_back":      ("main_panel",      f"⬅️ {small_caps('back to main menu')}"),
     }
     if data in panel_nav:
         panel, toast = panel_nav[data]
@@ -222,7 +221,7 @@ async def settings_callback(client: Client, callback: CallbackQuery):
 
     if data == "settings_close":
         try:
-            await callback.answer("❌ ᴄʟᴏꜱɪɴɢ", show_alert=True)
+            await callback.answer(f"❌ {small_caps('closing')}", show_alert=True)
             await callback.message.delete()
         except Exception:
             pass
@@ -231,85 +230,85 @@ async def settings_callback(client: Client, callback: CallbackQuery):
     if data == "toggle_bandwidth":
         new_val = not config.get("bandwidth_mode", True)
         await Config.update(db.db, {"bandwidth_mode": new_val})
-        await callback.answer("✅ Bᴀɴᴅᴡɪᴅᴛʜ ᴍᴏᴅᴇ ᴛᴏɢɢʟᴇᴅ!", show_alert=True)
+        await callback.answer(f"✅ {small_caps('bandwidth mode toggled')}!", show_alert=True)
         return await show_panel(client, callback, "bandwidth_panel")
 
     if data == "toggle_botmode":
         new_val = not config.get("public_bot", False)
         await Config.update(db.db, {"public_bot": new_val})
-        mode = "ᴘᴜʙʟɪᴄ" if new_val else "ᴘʀɪᴠᴀᴛᴇ"
-        await callback.answer(f"✅ Bᴏᴛ ꜱᴇᴛ ᴛᴏ {mode}!", show_alert=True)
+        mode = small_caps("public") if new_val else small_caps("private")
+        await callback.answer(f"✅ {small_caps('bot set to')} {mode}!", show_alert=True)
         return await show_panel(client, callback, "botmode_panel")
 
     if data == "toggle_fsub":
         new_val = not config.get("fsub_mode", False)
         await Config.update(db.db, {"fsub_mode": new_val})
-        await callback.answer("✅ Fᴏʀᴄᴇ ꜱᴜʙ ᴛᴏɢɢʟᴇᴅ!", show_alert=True)
+        await callback.answer(f"✅ {small_caps('force sub toggled')}!", show_alert=True)
         return await show_panel(client, callback, "fsub_panel")
 
     if data == "set_bandwidth_limit":
         text = await ask_input(
             client, callback.from_user.id,
-            "📡 **Sᴇɴᴅ ʙᴀɴᴅᴡɪᴅᴛʜ ʟɪᴍɪᴛ ɪɴ ʙʏᴛᴇꜱ**\n\n"
-            "ᴇxᴀᴍᴘʟᴇꜱ:\n"
+            f"📡 **{small_caps('send bandwidth limit in bytes')}**\n\n"
+            f"{small_caps('examples')}:\n"
             "`107374182400` — 100 GB\n"
             "`53687091200`  — 50 GB\n"
             "`10737418240`  — 10 GB\n\n"
-            "Sᴇɴᴅ `0` ᴛᴏ ʀᴇꜱᴇᴛ ᴛᴏ 100 GB.",
+            f"{small_caps('send')} `0` {small_caps('to reset to 100 gb')}.",
         )
         if text is None:
             return
         if not text.isdigit():
-            await callback.answer("❌ Iɴᴠᴀʟɪᴅ ɴᴜᴍʙᴇʀ!", show_alert=True)
+            await callback.answer(f"❌ {small_caps('invalid number')}!", show_alert=True)
             return
         new_limit = int(text) or 107374182400
         await Config.update(db.db, {"max_bandwidth": new_limit})
-        await callback.answer(f"✅ Lɪᴍɪᴛ ꜱᴇᴛ ᴛᴏ {format_size(new_limit)}!", show_alert=True)
+        await callback.answer(f"✅ {small_caps('limit set to')} {format_size(new_limit)}!", show_alert=True)
         return await show_panel(client, callback, "bandwidth_panel")
 
     if data == "reset_bandwidth":
-        await callback.answer("🔄 Rᴇꜱᴇᴛᴛɪɴɢ ʙᴀɴᴅᴡɪᴅᴛʜ ᴜꜱᴀɢᴇ…", show_alert=False)
+        await callback.answer(f"🔄 {small_caps('resetting bandwidth usage')}…", show_alert=False)
         ok = await db.reset_bandwidth()
         if ok:
-            await callback.answer("✅ Bᴀɴᴅᴡɪᴅᴛʜ ᴜꜱᴀɢᴇ ʀᴇꜱᴇᴛ ᴛᴏ ᴢᴇʀᴏ!", show_alert=True)
+            await callback.answer(f"✅ {small_caps('bandwidth usage reset to zero')}!", show_alert=True)
         else:
-            await callback.answer("❌ Fᴀɪʟᴇᴅ ᴛᴏ ʀᴇꜱᴇᴛ ʙᴀɴᴅᴡɪᴅᴛʜ.", show_alert=True)
+            await callback.answer(f"❌ {small_caps('failed to reset bandwidth')}.", show_alert=True)
         return await show_panel(client, callback, "bandwidth_panel")
 
     if data == "sudo_add":
         text = await ask_input(
             client, callback.from_user.id,
-            "👥 **Sᴇɴᴅ ᴜꜱᴇʀ ID ᴛᴏ ᴀᴅᴅ ᴀꜱ ꜱᴜᴅᴏ**",
+            f"👥 **{small_caps('send user id to add as sudo')}**",
         )
         if text is None:
             return
         if not text.lstrip("-").isdigit():
-            await callback.answer("❌ Iɴᴠᴀʟɪᴅ ᴜꜱᴇʀ ID!", show_alert=True)
+            await callback.answer(f"❌ {small_caps('invalid user id')}!", show_alert=True)
             return
         await db.add_sudo_user(text, str(callback.from_user.id))
-        await callback.answer(f"✅ `{text}` ᴀᴅᴅᴇᴅ ᴀꜱ ꜱᴜᴅᴏ!", show_alert=True)
+        await callback.answer(f"✅ `{text}` {small_caps('added as sudo')}!", show_alert=True)
         return await show_panel(client, callback, "sudo_panel")
 
     if data == "sudo_remove":
         text = await ask_input(
             client, callback.from_user.id,
-            "👥 **Sᴇɴᴅ ᴜꜱᴇʀ ID ᴛᴏ ʀᴇᴍᴏᴠᴇ ꜰʀᴏᴍ ꜱᴜᴅᴏ**",
+            f"👥 **{small_caps('send user id to remove from sudo')}**",
         )
         if text is None:
             return
         result = await db.remove_sudo_user(text)
         if result:
-            await callback.answer(f"✅ `{text}` ʀᴇᴍᴏᴠᴇᴅ ꜰʀᴏᴍ ꜱᴜᴅᴏ!", show_alert=True)
+            await callback.answer(f"✅ `{text}` {small_caps('removed from sudo')}!", show_alert=True)
         else:
-            await callback.answer(f"❌ `{text}` ɴᴏᴛ ꜰᴏᴜɴᴅ ɪɴ ꜱᴜᴅᴏ ʟɪꜱᴛ.", show_alert=True)
+            await callback.answer(f"❌ `{text}` {small_caps('not found in sudo list')}.", show_alert=True)
         return await show_panel(client, callback, "sudo_panel")
 
     if data == "set_fsub_id":
         text = await ask_input(
             client, callback.from_user.id,
-            "📢 **Sᴇɴᴅ ᴛʜᴇ Cʜᴀɴɴᴇʟ ID**\n\n"
-            "📌 Fᴏʀᴍᴀᴛ: `-100xxxxxxxxxx`\n"
-            "➡️ Sᴇɴᴅ `0` ᴛᴏ ᴜɴꜱᴇᴛ.",
+            f"📢 **{small_caps('send the channel id')}**\n\n"
+            f"📌 {small_caps('format')}: `-100xxxxxxxxxx`\n"
+            f"➡️ {small_caps('send')} `0` {small_caps('to unset')}.",
         )
         if text is None:
             return
@@ -318,12 +317,12 @@ async def settings_callback(client: Client, callback: CallbackQuery):
 
         if value == 0:
             await Config.update(db.db, {"fsub_chat_id": 0, "fsub_inv_link": ""})
-            await callback.answer("✅ Fꜱᴜʙ ᴄʜᴀɴɴᴇʟ ᴜɴꜱᴇᴛ!", show_alert=True)
+            await callback.answer(f"✅ {small_caps('force sub channel unset')}!", show_alert=True)
             return await show_panel(client, callback, "fsub_panel")
 
         if not str(value).startswith("-100"):
             return await callback.answer(
-                "❌ Iɴᴠᴀʟɪᴅ ID!\n\n📌 Cʜᴀɴɴᴇʟ ID ᴍᴜꜱᴛ ꜱᴛᴀʀᴛ ᴡɪᴛʜ `-100`",
+                f"❌ {small_caps('invalid id')}!\n\n📌 {small_caps('channel id must start with')} `-100`",
                 show_alert=True,
             )
 
@@ -333,15 +332,15 @@ async def settings_callback(client: Client, callback: CallbackQuery):
 
             if member.status not in (ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER):
                 return await callback.answer(
-                    "❌ Nᴏ Aᴅᴍɪɴ Rɪɢʜᴛꜱ!\n\n⚡ I ᴍᴜꜱᴛ ʙᴇ Aᴅᴍɪɴ ɪɴ ᴛʜᴀᴛ ᴄʜᴀɴɴᴇʟ.",
+                    f"❌ {small_caps('no admin rights')}!\n\n⚡ {small_caps('i must be admin in that channel')}.",
                     show_alert=True,
                 )
 
             rights = getattr(member, "privileges", None)
             if rights and not rights.can_invite_users:
                 return await callback.answer(
-                    "❌ Mɪꜱꜱɪɴɢ Pᴇʀᴍɪꜱꜱɪᴏɴ!\n\n"
-                    "👤 Pʟᴇᴀꜱᴇ ɢʀᴀɴᴛ: 🔑 `Aᴅᴅ Sᴜʙꜱᴄʀɪʙᴇʀꜱ` ʀɪɢʜᴛ",
+                    f"❌ {small_caps('missing permission')}!\n\n"
+                    f"👤 {small_caps('please grant')}: 🔑 `{small_caps('add subscribers')}` {small_caps('right')}",
                     show_alert=True,
                 )
 
@@ -352,23 +351,23 @@ async def settings_callback(client: Client, callback: CallbackQuery):
 
             await Config.update(db.db, {"fsub_chat_id": value, "fsub_inv_link": inv})
             await callback.answer(
-                "✅ Fꜱᴜʙ ᴄʜᴀɴɴᴇʟ ꜱᴀᴠᴇᴅ!\n\n🆔 ID + 🔗 Iɴᴠɪᴛᴇ ʟɪɴᴋ ᴀᴅᴅᴇᴅ.",
+                f"✅ {small_caps('force sub channel saved')}!\n\n🆔 {small_caps('id')} + 🔗 {small_caps('invite link added')}.",
                 show_alert=True,
             )
 
         except Exception as exc:
-            return await callback.answer(f"❌ Eʀʀᴏʀ:\n`{exc}`", show_alert=True)
+            return await callback.answer(f"❌ {small_caps('error')}:\n`{exc}`", show_alert=True)
 
         return await show_panel(client, callback, "fsub_panel")
 
     if data == "set_fsub_link":
         text = await ask_input(
             client, callback.from_user.id,
-            "🔗 **Sᴇɴᴅ ɪɴᴠɪᴛᴇ ʟɪɴᴋ**\n\nSend `0` to unset.",
+            f"🔗 **{small_caps('send invite link')}**\n\n{small_caps('send')} `0` {small_caps('to unset')}.",
         )
         if text is not None:
             await Config.update(db.db, {"fsub_inv_link": "" if text == "0" else text})
-            await callback.answer("✅ Fꜱᴜʙ ɪɴᴠɪᴛᴇ ʟɪɴᴋ ᴜᴘᴅᴀᴛᴇᴅ!", show_alert=True)
+            await callback.answer(f"✅ {small_caps('force sub invite link updated')}!", show_alert=True)
             return await show_panel(client, callback, "fsub_panel")
         return
 
@@ -385,7 +384,7 @@ async def adminstats_command(client: Client, message: Message):
     max_bw  = Config.get("max_bandwidth", 107374182400)
     bw_used = bw_stats["total_bandwidth"]
     bw_pct  = (bw_used / max_bw * 100) if max_bw else 0
-    bw_mode = "🟢 ᴀᴄᴛɪᴠᴇ" if Config.get("bandwidth_mode", True) else "🔴 ɪɴᴀᴄᴛɪᴠᴇ"
+    bw_mode = f"🟢 {small_caps('active')}" if Config.get("bandwidth_mode", True) else f"🔴 {small_caps('inactive')}"
 
     text = (
         f"📊 **{small_caps('admin statistics')}**\n\n"
@@ -414,8 +413,8 @@ async def revoke_command(client: Client, message: Message):
         await client.send_message(
             chat_id=message.chat.id,
             text=(
-                f"❌ **{small_caps('invalid command')}**\n\n"
-                "ᴜꜱᴀɢᴇ: `/revoke <file_hash>`"
+                f"❌ **{small_caps('usage')}**\n\n"
+                f"`/revoke <file_hash>`"
             ),
             reply_to_message_id=message.id,
         )
@@ -436,13 +435,12 @@ async def revoke_command(client: Client, message: Message):
         return
 
     safe_name = escape_markdown(file_data["file_name"])
-    # Use the shared revoke_<hash> callback so gen.py's cb_revoke_confirm
-    # handles the Yes / No dialog consistently for both the button and command.
+    # Routes to gen.py's cb_revoke_confirm handler via the shared "revoke_<hash>" pattern.
     await client.send_message(
         chat_id=message.chat.id,
         text=(
             f"⚠️ **{small_caps('confirm revoke')}**\n\n"
-            f"ᴀʀᴇ ʏᴏᴜ ꜱᴜʀᴇ ʏᴏᴜ ᴡᴀɴᴛ ᴛᴏ ᴘᴇʀᴍᴀɴᴇɴᴛʟʏ ʀᴇᴠᴏᴋᴇ:\n\n"
+            "ᴀʀᴇ ʏᴏᴜ ꜱᴜʀᴇ ʏᴏᴜ ᴡᴀɴᴛ ᴛᴏ ᴘᴇʀᴍᴀɴᴇɴᴛʟʏ ʀᴇᴠᴏᴋᴇ:\n\n"
             f"📂 **{small_caps('file')}:** `{safe_name}`\n\n"
             "ᴀʟʟ ʟɪɴᴋꜱ ᴡɪʟʟ ʙᴇᴄᴏᴍᴇ ɪɴᴠᴀʟɪᴅ."
         ),
@@ -468,7 +466,7 @@ async def revokeall_command(client: Client, message: Message):
                 chat_id=message.chat.id,
                 text=(
                     f"❌ **{small_caps('invalid user id')}**\n\n"
-                    "ᴜꜱᴀɢᴇ: `/revokeall <user_id>`"
+                    f"`/revokeall <user_id>`"
                 ),
                 reply_to_message_id=message.id,
             )
@@ -481,7 +479,7 @@ async def revokeall_command(client: Client, message: Message):
         if count == 0:
             await client.send_message(
                 chat_id=message.chat.id,
-                text=f"📂 ɴᴏ ꜰɪʟᴇꜱ ꜰᴏᴜɴᴅ ꜰᴏʀ ᴜꜱᴇʀ `{target_id}`.",
+                text=f"📂 **{small_caps('no files found')}** {small_caps('for user')} `{target_id}`.",
                 reply_to_message_id=message.id,
             )
             return
@@ -489,7 +487,7 @@ async def revokeall_command(client: Client, message: Message):
         await client.send_message(
             chat_id=message.chat.id,
             text=(
-                f"⚠️ **Warning**\n\n"
+                f"⚠️ **{small_caps('confirm revokeall')}**\n\n"
                 f"ᴛʜɪꜱ ᴡɪʟʟ ᴘᴇʀᴍᴀɴᴇɴᴛʟʏ ᴅᴇʟᴇᴛᴇ **{count}** ꜰɪʟᴇꜱ "
                 f"ʙᴇʟᴏɴɢɪɴɢ ᴛᴏ ᴜꜱᴇʀ `{target_id}`.\n"
                 "ᴀʟʟ ꜱᴛʀᴇᴀᴍ/ᴅᴏᴡɴʟᴏᴀᴅ ʟɪɴᴋꜱ ᴡɪʟʟ ʙᴇᴄᴏᴍᴇ ɪɴᴠᴀʟɪᴅ.\n\n"
@@ -499,11 +497,11 @@ async def revokeall_command(client: Client, message: Message):
             reply_markup=InlineKeyboardMarkup([
                 [
                     InlineKeyboardButton(
-                        "✅ ᴄᴏɴꜰɪʀᴍ",
+                        f"✅ {small_caps('confirm')}",
                         callback_data=f"revokeuser_confirm_{target_id}",
                     ),
                     InlineKeyboardButton(
-                        "❌ ᴄᴀɴᴄᴇʟ",
+                        f"❌ {small_caps('cancel')}",
                         callback_data="revokeall_cancel",
                     ),
                 ]
@@ -517,7 +515,7 @@ async def revokeall_command(client: Client, message: Message):
     if total_files == 0:
         await client.send_message(
             chat_id=message.chat.id,
-            text="📂 ɴᴏ ꜰɪʟᴇꜱ ᴛᴏ ᴅᴇʟᴇᴛᴇ.",
+            text=f"📂 **{small_caps('no files to delete')}**.",
             reply_to_message_id=message.id,
         )
         return
@@ -525,7 +523,7 @@ async def revokeall_command(client: Client, message: Message):
     await client.send_message(
         chat_id=message.chat.id,
         text=(
-            f"⚠️ **Warning**\n\n"
+            f"⚠️ **{small_caps('confirm revokeall')}**\n\n"
             f"ᴛʜɪꜱ ᴡɪʟʟ ᴘᴇʀᴍᴀɴᴇɴᴛʟʏ ᴅᴇʟᴇᴛᴇ **{total_files}** ꜰɪʟᴇꜱ ꜰʀᴏᴍ ᴛʜᴇ ᴅᴀᴛᴀʙᴀꜱᴇ.\n"
             "ᴀʟʟ ꜱᴛʀᴇᴀᴍ/ᴅᴏᴡɴʟᴏᴀᴅ ʟɪɴᴋꜱ ᴡɪʟʟ ʙᴇᴄᴏᴍᴇ ɪɴᴠᴀʟɪᴅ.\n\n"
             "ᴀʀᴇ ʏᴏᴜ ꜱᴜʀᴇ?"
@@ -533,8 +531,8 @@ async def revokeall_command(client: Client, message: Message):
         reply_to_message_id=message.id,
         reply_markup=InlineKeyboardMarkup([
             [
-                InlineKeyboardButton("✅ ᴄᴏɴꜰɪʀᴍ", callback_data="revokeall_confirm"),
-                InlineKeyboardButton("❌ ᴄᴀɴᴄᴇʟ",  callback_data="revokeall_cancel"),
+                InlineKeyboardButton(f"✅ {small_caps('confirm')}", callback_data="revokeall_confirm"),
+                InlineKeyboardButton(f"❌ {small_caps('cancel')}",  callback_data="revokeall_cancel"),
             ]
         ]),
     )
@@ -546,26 +544,26 @@ async def revokeall_callback(client: Client, callback: CallbackQuery):
         return
 
     if callback.data == "revokeall_cancel":
-        await callback.answer("❌ ᴄᴀɴᴄᴇʟʟᴇᴅ.", show_alert=False)
+        await callback.answer(f"❌ {small_caps('cancelled')}.", show_alert=False)
         try:
-            await callback.message.edit_text("❌ **Revokeall cancelled.**",
+            await callback.message.edit_text(
+                f"❌ **{small_caps('revokeall cancelled')}.**"
             )
         except Exception:
             pass
         return
 
-    await callback.answer("🗑️ ᴅᴇʟᴇᴛɪɴɢ ᴀʟʟ ꜰɪʟᴇꜱ…", show_alert=False)
+    await callback.answer(f"🗑️ {small_caps('deleting all files')}…", show_alert=False)
     try:
-        await callback.message.edit_text("🗑️ ᴅᴇʟᴇᴛɪɴɢ ᴀʟʟ ꜰɪʟᴇꜱ…",
-        )
+        await callback.message.edit_text(f"🗑️ {small_caps('deleting all files')}…")
     except Exception:
         pass
 
     deleted_count = await db.delete_all_files()
     try:
         await callback.message.edit_text(
-            f"🗑️ **All files deleted!**\n\n"
-            f"ᴅᴇʟᴇᴛᴇᴅ `{deleted_count}` ꜰɪʟᴇꜱ ꜱᴜᴄᴄᴇꜱꜱꜰᴜʟʟʏ.",
+            f"🗑️ **{small_caps('all files deleted')}!**\n\n"
+            f"{small_caps('deleted')} `{deleted_count}` {small_caps('files successfully')}."
         )
     except Exception:
         pass
@@ -578,10 +576,10 @@ async def revokeuser_confirm_callback(client: Client, callback: CallbackQuery):
 
     target_id = callback.data.replace("revokeuser_confirm_", "", 1)
 
-    await callback.answer("🗑️ ᴅᴇʟᴇᴛɪɴɢ…", show_alert=False)
+    await callback.answer(f"🗑️ {small_caps('deleting')}…", show_alert=False)
     try:
         await callback.message.edit_text(
-            f"🗑️ ᴅᴇʟᴇᴛɪɴɢ ᴀʟʟ ꜰɪʟᴇꜱ ꜰᴏʀ ᴜꜱᴇʀ `{target_id}`…",
+            f"🗑️ {small_caps('deleting all files for user')} `{target_id}`…"
         )
     except Exception:
         pass
@@ -589,9 +587,8 @@ async def revokeuser_confirm_callback(client: Client, callback: CallbackQuery):
     deleted_count = await db.delete_user_files(target_id)
     try:
         await callback.message.edit_text(
-            f"🗑️ **Done!**\n\n"
-            f"ᴅᴇʟᴇᴛᴇᴅ `{deleted_count}` ꜰɪʟᴇꜱ ꜱᴜᴄᴄᴇꜱꜱꜰᴜʟʟʏ "
-            f"ꜰᴏʀ ᴜꜱᴇʀ `{target_id}`.",
+            f"🗑️ **{small_caps('done')}!**\n\n"
+            f"{small_caps('deleted')} `{deleted_count}` {small_caps('files for user')} `{target_id}`."
         )
     except Exception:
         pass
@@ -607,7 +604,7 @@ async def logs_command(client: Client, message: Message):
     if not os.path.isfile(log_file) or os.path.getsize(log_file) == 0:
         await client.send_message(
             chat_id=message.chat.id,
-            text="❌ **Log file not found or empty.**",
+            text=f"❌ **{small_caps('log file not found or empty')}.**",
             reply_to_message_id=message.id,
         )
         return
@@ -618,9 +615,9 @@ async def logs_command(client: Client, message: Message):
             document=log_file,
             file_name="bot.log",
             caption=(
-                "📋 **Bot Logs**\n\n"
-                f"📁 **File:** `bot.log`\n"
-                f"📦 **Size:** `{human_size(os.path.getsize(log_file))}`"
+                f"📋 **{small_caps('bot logs')}**\n\n"
+                f"📁 **{small_caps('file')}:** `bot.log`\n"
+                f"📦 **{small_caps('size')}:** `{human_size(os.path.getsize(log_file))}`"
             ),
             reply_to_message_id=message.id,
         )
@@ -631,15 +628,13 @@ async def logs_command(client: Client, message: Message):
                 tail = fh.read()[-4000:]
             await client.send_message(
                 chat_id=message.chat.id,
-                text=f"📋 **Bot Logs** *(last 4 000 chars)*\n\n```\n{tail}\n```",
+                text=f"📋 **{small_caps('bot logs')}** *({small_caps('last 4000 chars')})*\n\n```\n{tail}\n```",
                 reply_to_message_id=message.id,
-            
             )
         except Exception as exc2:
             logger.error("logs_command fallback error: %s", exc2)
             await client.send_message(
                 chat_id=message.chat.id,
-                text=f"❌ **Error reading logs:** `{exc2}`",
+                text=f"❌ **{small_caps('error reading logs')}:** `{exc2}`",
                 reply_to_message_id=message.id,
-            
             )

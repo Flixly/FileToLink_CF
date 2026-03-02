@@ -116,41 +116,106 @@ def build_app(bot: Bot, database) -> web.Application:
 
     async def stats_endpoint(request: web.Request):
         try:
-            stats = await database.get_stats()
-            stats["formatted"] = {
-                "total_bandwidth": format_size(stats["total_bandwidth"]),
-                "today_bandwidth": format_size(stats["today_bandwidth"]),
-            }
-            return web.Response(text=json.dumps(stats), content_type="application/json")
+            stats    = await database.get_stats()
+            bw_stats = await database.get_bandwidth_stats()
+            max_bw   = Config.get("max_bandwidth", 107374182400)
+            bw_used  = bw_stats["total_bandwidth"]
+            bw_today = bw_stats["today_bandwidth"]
+            bw_pct   = round((bw_used / max_bw * 100) if max_bw else 0, 1)
+
+            # Return JSON when explicitly requested
+            if "application/json" in request.headers.get("Accept", ""):
+                stats["formatted"] = {
+                    "total_bandwidth": format_size(bw_used),
+                    "today_bandwidth": format_size(bw_today),
+                }
+                return web.Response(text=json.dumps(stats), content_type="application/json")
+
+            return aiohttp_jinja2.render_template(
+                "stats.html",
+                request,
+                {
+                    "bot_name":     Config.BOT_NAME     or Config.DEFAULT_BOT_NAME,
+                    "bot_username": Config.BOT_USERNAME or Config.DEFAULT_BOT_USERNAME,
+                    "total_users":  stats["total_users"],
+                    "total_files":  stats["total_files"],
+                    "bw_used":      format_size(bw_used),
+                    "bw_today":     format_size(bw_today),
+                    "bw_limit":     format_size(max_bw),
+                    "bw_pct":       bw_pct,
+                },
+            )
         except Exception as exc:
             logger.error("stats error: %s", exc)
             return web.json_response({"error": str(exc)}, status=500)
 
     async def bandwidth_endpoint(request: web.Request):
         try:
-            stats  = await database.get_bandwidth_stats()
-            max_bw = Config.get("max_bandwidth", 107374182400)
-            used   = stats["total_bandwidth"]
-            stats["limit"]      = max_bw
-            stats["remaining"]  = max_bw - used
-            stats["percentage"] = (used / max_bw * 100) if max_bw else 0
-            stats["formatted"]  = {
-                "total_bandwidth": format_size(used),
-                "today_bandwidth": format_size(stats["today_bandwidth"]),
-                "limit":           format_size(max_bw),
-                "remaining":       format_size(stats["remaining"]),
-            }
-            return web.Response(text=json.dumps(stats), content_type="application/json")
+            stats     = await database.get_bandwidth_stats()
+            max_bw    = Config.get("max_bandwidth", 107374182400)
+            bw_mode   = Config.get("bandwidth_mode", True)
+            used      = stats["total_bandwidth"]
+            today     = stats["today_bandwidth"]
+            remaining = max_bw - used
+            pct       = round((used / max_bw * 100) if max_bw else 0, 1)
+
+            # Return JSON when explicitly requested
+            if "application/json" in request.headers.get("Accept", ""):
+                return web.Response(
+                    text=json.dumps({
+                        **stats,
+                        "limit":      max_bw,
+                        "remaining":  remaining,
+                        "percentage": pct,
+                        "formatted":  {
+                            "total_bandwidth": format_size(used),
+                            "today_bandwidth": format_size(today),
+                            "limit":           format_size(max_bw),
+                            "remaining":       format_size(remaining),
+                        },
+                    }),
+                    content_type="application/json",
+                )
+
+            return aiohttp_jinja2.render_template(
+                "bandwidth_info.html",
+                request,
+                {
+                    "bot_name":     Config.BOT_NAME     or Config.DEFAULT_BOT_NAME,
+                    "bot_username": Config.BOT_USERNAME or Config.DEFAULT_BOT_USERNAME,
+                    "bw_mode":      bw_mode,
+                    "bw_limit":     format_size(max_bw),
+                    "bw_used":      format_size(used),
+                    "bw_today":     format_size(today),
+                    "bw_remaining": format_size(remaining),
+                    "bw_pct":       pct,
+                },
+            )
         except Exception as exc:
             logger.error("bandwidth error: %s", exc)
             return web.json_response({"error": str(exc)}, status=500)
 
     async def health(request: web.Request):
-        return web.json_response({
-            "status":       "ok",
-            "bot":          "running" if Config.BOT_USERNAME else "initializing",
-            "bot_username": Config.BOT_USERNAME,
-        })
+        bot_status  = "running" if Config.BOT_USERNAME else "initializing"
+        bot_username = Config.BOT_USERNAME or Config.DEFAULT_BOT_USERNAME
+
+        # Return JSON when explicitly requested
+        if "application/json" in request.headers.get("Accept", ""):
+            return web.json_response({
+                "status":       "ok",
+                "bot":          bot_status,
+                "bot_username": bot_username,
+            })
+
+        return aiohttp_jinja2.render_template(
+            "health.html",
+            request,
+            {
+                "bot_name":     Config.BOT_NAME or Config.DEFAULT_BOT_NAME,
+                "bot_username": bot_username,
+                "bot_status":   bot_status,
+            },
+        )
 
     app.router.add_get("/",                   home)
     app.router.add_get("/stream/{file_hash}", stream_page)

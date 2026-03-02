@@ -8,11 +8,13 @@ A high-performance Telegram bot for file streaming and downloading, built with *
 
 - **⚡ Range Request Support** — video seeking and resumable downloads
 - **📦 Efficient Streaming** — 1 MB chunk size, aligned to Telegram's `upload.GetFile` limit
-- **🔗 MongoDB Connection Pooling** — 10–50 connections for fast queries
+- **🔗 MongoDB Connection Pooling** — fast async queries via Motor
 - **💾 File ID Storage** — direct Telegram file access without re-downloading
 - **🔐 Secure Links** — HMAC-SHA256 signed file hashes
 - **📢 Log Channel** — new user registrations and file uploads logged automatically
 - **⚙️ Settings Panel** — full bot configuration via inline keyboard (`/bot_settings`)
+- **🌐 Themed Web Pages** — `/stats`, `/bandwidth`, `/health` served as styled HTML pages (JSON available via `Accept: application/json`)
+- **🎬 Stream Button** — auto-shown for video and audio files in all file views
 - **🐳 Docker Support** — ready-to-use `Dockerfile`
 
 ---
@@ -22,13 +24,13 @@ A high-performance Telegram bot for file streaming and downloading, built with *
 ```
 filestream-bot/
 ├── main.py              # Entry point — boots bot + web server
-├── app.py               # aiohttp web app (routes)
+├── app.py               # aiohttp web app (routes + HTML/JSON responses)
 ├── bot.py               # Pyrogram client
-├── config.py            # Configuration + coloured logging setup
+├── config.py            # Configuration + logging setup
 ├── FLiX/
 │   ├── __init__.py
-│   ├── admin.py         # /bot_settings, /revokeall, /logs + callback handlers
-│   ├── gen.py           # File handler, /files, /revoke, /stats
+│   ├── admin.py         # /bot_settings, /adminstats, /revoke, /revokeall, /logs
+│   ├── gen.py           # File upload handler, /files, inline query, callbacks
 │   └── start.py         # /start, /help, /about
 ├── database/
 │   └── mongodb.py       # Motor async MongoDB client
@@ -37,8 +39,15 @@ filestream-bot/
 │   ├── bandwidth.py     # Bandwidth check helper
 │   ├── crypto.py        # HMAC hash utility
 │   ├── stream.py        # ByteStreamer + StreamingService
-│   └── utils.py         # format_size, escape_markdown, small_caps, check_fsub
+│   └── utils.py         # format_size, small_caps, check_owner, check_fsub, …
 └── templates/           # Jinja2 HTML templates
+    ├── home.html
+    ├── stream.html
+    ├── not_found.html
+    ├── bandwidth_exceeded.html
+    ├── stats.html
+    ├── bandwidth_info.html
+    └── health.html
 ```
 
 ---
@@ -87,22 +96,23 @@ Copy `.env.example` to `.env` and fill in your values:
 | `BOT_TOKEN` | ✅ | Telegram bot token from @BotFather |
 | `API_ID` | ✅ | Telegram API ID from my.telegram.org |
 | `API_HASH` | ✅ | Telegram API Hash from my.telegram.org |
-| `DUMP_CHAT_ID` | ✅ | Channel ID where files are stored |
+| `FLOG_CHAT_ID` | ✅ | Channel ID where files are stored (dump channel) |
 | `OWNER_ID` | ✅ | Your Telegram user ID (comma-separated for multiple) |
 | `DB_URI` | ✅ | MongoDB connection string |
 | `DATABASE_NAME` | — | MongoDB database name (default: `filestream_bot`) |
 | `URL` | — | Public base URL for stream/download links |
 | `PORT` | — | Web server port (default: `8080`) |
-| `LOGS_CHAT_ID` | — | Channel ID for logging new users & files |
+| `LOGS_CHAT_ID` | — | Channel ID for logging new users (0 to disable) |
 | `SECRET_KEY` | — | HMAC secret for link signing |
 | `Start_IMG` | — | URL of image shown with `/start` |
-| `FSUB_ID` | — | Force-subscription channel ID |
-| `FSUB_INV_LINK` | — | Invite link for force-subscription |
+| `Files_IMG` | — | URL of image shown with `/files` |
+| `FSUB_ID` | — | Initial force-subscription channel ID |
+| `FSUB_INV_LINK` | — | Initial invite link for force-subscription |
 | `PUBLIC_BOT` | — | `True`/`False` — allow everyone (default: `False`) |
 | `MAX_BANDWIDTH` | — | Bandwidth limit in bytes (default: 100 GB) |
-| `MAX_TELEGRAM_SIZE` | — | Max accepted file size (default: 4 GB) |
+| `MAX_FILE_SIZE` | — | Max accepted file size in bytes (default: 4 GB) |
 
-> **Note:** `PUBLIC_BOT`, `MAX_BANDWIDTH`, bandwidth mode, force-sub settings, and sudo users are all managed live via `/bot_settings` and stored in MongoDB. The env variables above are **initial defaults** only.
+> **Note:** `PUBLIC_BOT`, `MAX_BANDWIDTH`, bandwidth mode, force-sub settings, and sudo users are all managed live via `/bot_settings` and stored in MongoDB. The env variables above serve as **initial defaults** only.
 
 ---
 
@@ -112,22 +122,24 @@ Copy `.env.example` to `.env` and fill in your values:
 
 | Command | Description |
 |---|---|
-| `/start` | Welcome message & feature overview |
+| `/start` | Welcome message with feature overview |
 | `/help` | Usage guide |
-| `/about` | Bot info |
-| `/files` | View your uploaded files |
-| `/stats` | Bot statistics |
-| `/revoke <hash>` | Delete a specific file & invalidate its links |
+| `/about` | Bot information |
+| `/files` | View your uploaded files with stream/download/revoke options |
 
 ### Owner Commands
 
 | Command | Description |
 |---|---|
-| `/bot_settings` | Full settings panel (bandwidth, sudo, bot mode, force-sub) |
-| `/revokeall` | Delete **all** files (shows confirm/cancel buttons) |
-| `/logs` | Receive the full `bot.log` file as a document |
+| `/bot_settings` | Full settings panel (bandwidth, sudo users, bot mode, force-sub) |
+| `/adminstats` | Detailed bot statistics (uptime, users, files, bandwidth) |
+| `/revoke <hash>` | Revoke a specific file and invalidate its links |
+| `/revokeall` | Delete all files (shows confirm/cancel prompt) |
+| `/revokeall <user_id>` | Delete all files belonging to a specific user |
+| `/logs` | Receive the current `bot.log` file as a document |
+| `/files <user_id>` | View another user's files (owner view with revoke option) |
 
-> All legacy text commands (`/addsudo`, `/rmsudo`, `/sudolist`, `/setpublic`, `/setbandwidth`, `/broadcast`, `/bandwidth`) have been removed in favour of the `/bot_settings` inline panel.
+> All settings are managed via the `/bot_settings` inline panel — no separate text commands needed.
 
 ---
 
@@ -136,20 +148,19 @@ Copy `.env.example` to `.env` and fill in your values:
 When `LOGS_CHAT_ID` is set, the bot automatically posts:
 
 - `#NewUser` — whenever a new user starts the bot
-- `#NewFile` — whenever a file is uploaded (user, file name, size, type)
 
 ---
 
 ## 🌐 Web Endpoints
 
-| Path | Description |
-|---|---|
-| `GET /` | Home page (static, no DB call) |
-| `GET /stream/<hash>` | Inline media player or raw stream |
-| `GET /dl/<hash>` | Force-download with `Content-Disposition: attachment` |
-| `GET /stats` | JSON stats (files, users, bandwidth) |
-| `GET /bandwidth` | JSON bandwidth details |
-| `GET /health` | Health check |
+| Path | Browser | `Accept: application/json` |
+|---|---|---|
+| `GET /` | Home page | — |
+| `GET /stream/<hash>` | Inline media player | Raw stream |
+| `GET /dl/<hash>` | Force-download | Force-download |
+| `GET /stats` | Styled stats page | JSON stats |
+| `GET /bandwidth` | Styled bandwidth page | JSON bandwidth details |
+| `GET /health` | Styled health page | JSON health check |
 
 ---
 
