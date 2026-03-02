@@ -8,15 +8,12 @@ from pyrogram.types import (
     InlineKeyboardMarkup,
     InlineQueryResultArticle,
     InlineQueryResultPhoto,
-    InlineQueryResultDocument,
-    InlineQueryResultVideo,
-    InlineQueryResultAudio,
     InputTextMessageContent,
     Message,
 )
 
 from config import Config
-from helper import Cryptic, format_size, escape_markdown, small_caps, check_fsub
+from helper import Cryptic, format_size, escape_markdown, small_caps, check_fsub, check_owner
 from database import db
 
 logger = logging.getLogger(__name__)
@@ -32,10 +29,6 @@ async def check_access(user_id: int) -> bool:
         return True
     return await db.is_sudo_user(str(user_id))
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# File upload handler  (user sends a file to the bot)
-# ─────────────────────────────────────────────────────────────────────────────
 
 @Client.on_message(
     (filters.document | filters.video | filters.audio | filters.photo) & filters.private,
@@ -192,7 +185,7 @@ async def file_handler(client: Client, message: Message):
 
     if is_streamable:
         buttons.append([
-            InlineKeyboardButton(f"🌐 {small_caps('stream')}",   url=stream_link),
+            InlineKeyboardButton(f"🎬 {small_caps('stream')}",   url=stream_link),
             InlineKeyboardButton(f"📥 {small_caps('download')}", url=download_link),
         ])
     else:
@@ -202,9 +195,7 @@ async def file_handler(client: Client, message: Message):
 
     buttons.extend([
         [
-            # "Get File" — triggers the bot to copy the file directly to the user
             InlineKeyboardButton(f"📩 {small_caps('get file')}", callback_data=f"getfile_{file_hash}"),
-            # "Share" — opens inline query so user can forward the file info to any chat
             InlineKeyboardButton(f"🔁 {small_caps('share')}", switch_inline_query=f"file_{file_hash}"),
         ],
     ])
@@ -220,7 +211,7 @@ async def file_handler(client: Client, message: Message):
     )
     if is_streamable:
         text += (
-            f"🌐 **{small_caps('streaming')}:** `Available`\n\n"
+            f"🎬 **{small_caps('streaming')}:** `Available`\n\n"
             f"🔗 **{small_caps('stream link')}:**\n`{stream_link}`"
         )
     else:
@@ -232,21 +223,12 @@ async def file_handler(client: Client, message: Message):
     )
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# /files command  (list user's own files, or owner views another user's files)
-# ─────────────────────────────────────────────────────────────────────────────
-
 @Client.on_message(filters.command("files") & filters.private, group=0)
 async def files_command(client: Client, message: Message):
     user_id = message.from_user.id
 
     if len(message.command) > 1:
-        if user_id not in Config.OWNER_ID:
-            await client.send_message(
-                chat_id=message.chat.id,
-                text="🚫 **Access Denied!**\n\n🔒 Only the bot owner can view other users' files.",
-                reply_to_message_id=message.id,
-            )
+        if not await check_owner(client, message):
             return
 
         raw = message.command[1]
@@ -255,7 +237,7 @@ async def files_command(client: Client, message: Message):
                 chat_id=message.chat.id,
                 text=(
                     f"❌ **{small_caps('invalid user id')}**\n\n"
-                    "ᴜꜱᴀɢᴇ: `/files <user_id>`"
+                    f"ᴜꜱᴀɢᴇ: `/files <user_id>`"
                 ),
                 reply_to_message_id=message.id,
             )
@@ -319,10 +301,6 @@ async def files_command(client: Client, message: Message):
         reply_markup=markup,
     )
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Helper: build the paginated file-list markup
-# ─────────────────────────────────────────────────────────────────────────────
 
 async def _build_user_files_markup(
     client,
@@ -407,10 +385,6 @@ async def _build_user_files_markup(
     return markup, caption
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# User file-list pagination  (userfiles_<page>)
-# ─────────────────────────────────────────────────────────────────────────────
-
 @Client.on_callback_query(filters.regex(r"^userfiles_\d+$"), group=0)
 async def cb_user_files_page(client: Client, callback: CallbackQuery):
     page    = int(callback.data.replace("userfiles_", ""))
@@ -426,14 +400,9 @@ async def cb_user_files_page(client: Client, callback: CallbackQuery):
     await callback.answer()
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Owner file-list pagination  (ownfiles_<user_id>_<page>)
-# ─────────────────────────────────────────────────────────────────────────────
-
 @Client.on_callback_query(filters.regex(r"^ownfiles_"), group=0)
 async def cb_owner_files_page(client: Client, callback: CallbackQuery):
-    if callback.from_user.id not in Config.OWNER_ID:
-        await callback.answer("🚫 Owner only.", show_alert=True)
+    if not await check_owner(client, callback):
         return
 
     # Format: ownfiles_<user_id>_<page>
@@ -451,13 +420,8 @@ async def cb_owner_files_page(client: Client, callback: CallbackQuery):
     await callback.answer()
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# User file detail  (myfile_<_id_hex>_<page>)
-# ─────────────────────────────────────────────────────────────────────────────
-
 @Client.on_callback_query(filters.regex(r"^myfile_"), group=0)
 async def cb_user_file_detail(client: Client, callback: CallbackQuery):
-    """Show detail card for a user's own file, with Get File / Share / Revoke."""
     # Format: myfile_<_id_hex>_<page>
     parts     = callback.data.split("_", 2)
     oid_str   = parts[1]
@@ -474,6 +438,8 @@ async def cb_user_file_detail(client: Client, callback: CallbackQuery):
         return
 
     file_hash     = file_data["file_id"]
+    file_type     = file_data.get("file_type", "document")
+    is_streamable = file_type in STREAMABLE_TYPES
     base_url      = Config.URL or f"http://localhost:{Config.PORT}"
     stream_link   = f"{base_url}/stream/{file_hash}"
     download_link = f"{base_url}/dl/{file_hash}"
@@ -481,11 +447,18 @@ async def cb_user_file_detail(client: Client, callback: CallbackQuery):
     safe_name      = escape_markdown(file_data["file_name"])
     formatted_size = format_size(file_data["file_size"])
 
-    buttons = [
-        [
-            InlineKeyboardButton(f"🌐 {small_caps('stream')}",   url=stream_link),
+    link_buttons = []
+    if is_streamable:
+        link_buttons.append([
+            InlineKeyboardButton(f"🎬 {small_caps('stream')}",   url=stream_link),
             InlineKeyboardButton(f"📥 {small_caps('download')}", url=download_link),
-        ],
+        ])
+    else:
+        link_buttons.append([
+            InlineKeyboardButton(f"📥 {small_caps('download')}", url=download_link),
+        ])
+
+    buttons = link_buttons + [
         [
             InlineKeyboardButton(f"📩 {small_caps('get file')}", callback_data=f"getfile_{file_hash}"),
             InlineKeyboardButton(f"🔁 {small_caps('share')}",    switch_inline_query=f"file_{file_hash}"),
@@ -493,6 +466,7 @@ async def cb_user_file_detail(client: Client, callback: CallbackQuery):
         [InlineKeyboardButton(f"🗑️ {small_caps('revoke')}",  callback_data=f"revoke_{file_hash}_{back_page}")],
         [InlineKeyboardButton(f"⬅️ {small_caps('back')}",    callback_data=f"userfiles_{back_page}")],
     ]
+
     text = (
         f"✅ **{small_caps('file details')}**\n\n"
         f"📂 **{small_caps('name')}:** `{safe_name}`\n"
@@ -504,10 +478,6 @@ async def cb_user_file_detail(client: Client, callback: CallbackQuery):
     await callback.answer()
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Close button
-# ─────────────────────────────────────────────────────────────────────────────
-
 @Client.on_callback_query(filters.regex(r"^close$"), group=0)
 async def cb_close(client: Client, callback: CallbackQuery):
     try:
@@ -517,15 +487,9 @@ async def cb_close(client: Client, callback: CallbackQuery):
     await callback.answer()
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Owner file detail  (ownview_<message_id>_<target_user_id>)
-# ─────────────────────────────────────────────────────────────────────────────
-
 @Client.on_callback_query(filters.regex(r"^ownview_"), group=0)
 async def cb_owner_file_detail(client: Client, callback: CallbackQuery):
-    """Show detail card for a user's file in the owner view, with Revoke."""
-    if callback.from_user.id not in Config.OWNER_ID:
-        await callback.answer("🚫 Owner only.", show_alert=True)
+    if not await check_owner(client, callback):
         return
 
     # Format: ownview_<message_id>_<target_user_id>
@@ -539,6 +503,8 @@ async def cb_owner_file_detail(client: Client, callback: CallbackQuery):
         return
 
     file_hash     = file_data["file_id"]
+    file_type     = file_data.get("file_type", "document")
+    is_streamable = file_type in STREAMABLE_TYPES
     base_url      = Config.URL or f"http://localhost:{Config.PORT}"
     stream_link   = f"{base_url}/stream/{file_hash}"
     download_link = f"{base_url}/dl/{file_hash}"
@@ -547,11 +513,18 @@ async def cb_owner_file_detail(client: Client, callback: CallbackQuery):
     safe_name      = escape_markdown(file_data["file_name"])
     formatted_size = format_size(file_data["file_size"])
 
-    buttons = [
-        [
-            InlineKeyboardButton(f"🌐 {small_caps('stream')}",   url=stream_link),
+    link_buttons = []
+    if is_streamable:
+        link_buttons.append([
+            InlineKeyboardButton(f"🎬 {small_caps('stream')}",   url=stream_link),
             InlineKeyboardButton(f"📥 {small_caps('download')}", url=download_link),
-        ],
+        ])
+    else:
+        link_buttons.append([
+            InlineKeyboardButton(f"📥 {small_caps('download')}", url=download_link),
+        ])
+
+    buttons = link_buttons + [
         [
             InlineKeyboardButton(f"💬 {small_caps('telegram')}", url=telegram_link),
         ],
@@ -564,6 +537,7 @@ async def cb_owner_file_detail(client: Client, callback: CallbackQuery):
             callback_data=f"ownback_{target_id}",
         )],
     ]
+
     text = (
         f"✅ **{small_caps('file details')}** *(owner view)*\n\n"
         f"📂 **{small_caps('name')}:** `{safe_name}`\n"
@@ -576,15 +550,9 @@ async def cb_owner_file_detail(client: Client, callback: CallbackQuery):
     await callback.answer()
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Owner revoke — confirmation dialog  (ownrevoke_<file_hash>_<target_user_id>)
-# ─────────────────────────────────────────────────────────────────────────────
-
 @Client.on_callback_query(filters.regex(r"^ownrevoke_(?!yes_|no_)"), group=0)
 async def cb_owner_revoke_confirm(client: Client, callback: CallbackQuery):
-    """Show Yes / No confirmation before owner permanently revokes a file."""
-    if callback.from_user.id not in Config.OWNER_ID:
-        await callback.answer("🚫 Owner only.", show_alert=True)
+    if not await check_owner(client, callback):
         return
 
     # Format: ownrevoke_<file_hash>_<target_user_id>
@@ -614,15 +582,9 @@ async def cb_owner_revoke_confirm(client: Client, callback: CallbackQuery):
     await callback.answer()
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Owner revoke — Yes confirmed  (ownrevoke_yes_<file_hash>_<target_user_id>)
-# ─────────────────────────────────────────────────────────────────────────────
-
 @Client.on_callback_query(filters.regex(r"^ownrevoke_yes_"), group=0)
 async def cb_owner_revoke_yes(client: Client, callback: CallbackQuery):
-    """Execute the revoke after owner pressed Yes."""
-    if callback.from_user.id not in Config.OWNER_ID:
-        await callback.answer("🚫 Owner only.", show_alert=True)
+    if not await check_owner(client, callback):
         return
 
     # Format: ownrevoke_yes_<file_hash>_<target_user_id>
@@ -658,15 +620,9 @@ async def cb_owner_revoke_yes(client: Client, callback: CallbackQuery):
     await callback.answer("✅ ꜰɪʟᴇ ʀᴇᴠᴏᴋᴇᴅ!", show_alert=False)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Owner revoke — No (go back to file detail)  (ownrevoke_no_<target_user_id>)
-# ─────────────────────────────────────────────────────────────────────────────
-
 @Client.on_callback_query(filters.regex(r"^ownrevoke_no_"), group=0)
 async def cb_owner_revoke_no(client: Client, callback: CallbackQuery):
-    """Owner pressed No on the revoke confirmation — return to user file list."""
-    if callback.from_user.id not in Config.OWNER_ID:
-        await callback.answer("🚫 Owner only.", show_alert=True)
+    if not await check_owner(client, callback):
         return
 
     target_id = callback.data[len("ownrevoke_no_"):]
@@ -680,14 +636,9 @@ async def cb_owner_revoke_no(client: Client, callback: CallbackQuery):
     await callback.answer()
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Owner back — return to user file list  (ownback_<target_user_id>)
-# ─────────────────────────────────────────────────────────────────────────────
-
 @Client.on_callback_query(filters.regex(r"^ownback_"), group=0)
 async def cb_owner_back(client: Client, callback: CallbackQuery):
-    if callback.from_user.id not in Config.OWNER_ID:
-        await callback.answer("🚫 Owner only.", show_alert=True)
+    if not await check_owner(client, callback):
         return
 
     target_id = callback.data[len("ownback_"):]
@@ -701,18 +652,12 @@ async def cb_owner_back(client: Client, callback: CallbackQuery):
     await callback.answer()
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# User revoke — confirmation dialog  (revoke_<file_hash>_<back_page>)
-#
-# NOTE: The /revoke command (admin.py) also lands on this same handler via the
+# NOTE: The /revoke command (admin.py) also routes to this handler via the
 #       shared callback_data prefix "revoke_<file_hash>".  Both the inline
-#       Revoke button and the /revoke command now emit the same pattern so
+#       Revoke button and the /revoke command emit the same pattern so
 #       confirmation and execution are handled in one place.
-# ─────────────────────────────────────────────────────────────────────────────
-
 @Client.on_callback_query(filters.regex(r"^revoke_(?!yes_|no_)"), group=0)
 async def cb_revoke_confirm(client: Client, callback: CallbackQuery):
-    """Show Yes / No confirmation before permanently revoking a file."""
     # Format (from file detail): revoke_<file_hash>_<back_page>
     # Format (from /revoke cmd): revoke_<file_hash>   (no back_page)
     raw       = callback.data[len("revoke_"):]
@@ -741,13 +686,8 @@ async def cb_revoke_confirm(client: Client, callback: CallbackQuery):
     await callback.answer()
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# User revoke — Yes confirmed  (revoke_yes_<file_hash>_<back_page>)
-# ─────────────────────────────────────────────────────────────────────────────
-
 @Client.on_callback_query(filters.regex(r"^revoke_yes_"), group=0)
 async def cb_revoke_yes(client: Client, callback: CallbackQuery):
-    """Execute the revoke after user pressed Yes."""
     # Format: revoke_yes_<file_hash>_<back_page>
     raw       = callback.data[len("revoke_yes_"):]
     parts     = raw.split("_", 1)
@@ -777,13 +717,8 @@ async def cb_revoke_yes(client: Client, callback: CallbackQuery):
     await callback.answer("✅ ꜰɪʟᴇ ʀᴇᴠᴏᴋᴇᴅ!", show_alert=False)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# User revoke — No (go back to file list)  (revoke_no_<back_page>)
-# ─────────────────────────────────────────────────────────────────────────────
-
 @Client.on_callback_query(filters.regex(r"^revoke_no_"), group=0)
 async def cb_revoke_no(client: Client, callback: CallbackQuery):
-    """User pressed No on the revoke confirmation — return to their file list."""
     back_page_str = callback.data[len("revoke_no_"):]
     try:
         back_page = int(back_page_str)
@@ -801,14 +736,8 @@ async def cb_revoke_no(client: Client, callback: CallbackQuery):
     await callback.answer()
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Get File  (getfile_<file_hash>)
-# Copies the stored file directly into the user's chat.
-# ─────────────────────────────────────────────────────────────────────────────
-
 @Client.on_callback_query(filters.regex(r"^getfile_"), group=0)
 async def cb_get_file(client: Client, callback: CallbackQuery):
-    """Deliver the file to the user by copying it from the log channel."""
     file_hash = callback.data[len("getfile_"):]
     user_id   = callback.from_user.id
 
@@ -820,7 +749,6 @@ async def cb_get_file(client: Client, callback: CallbackQuery):
     await callback.answer("📩 ꜱᴇɴᴅɪɴɢ ꜰɪʟᴇ…", show_alert=False)
 
     try:
-        # copy_message re-sends the original message from the log channel
         await client.copy_message(
             chat_id=user_id,
             from_chat_id=Config.FLOG_CHAT_ID,
@@ -836,10 +764,6 @@ async def cb_get_file(client: Client, callback: CallbackQuery):
         except Exception:
             pass
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Inline query handler
-# ─────────────────────────────────────────────────────────────────────────────
 
 @Client.on_inline_query(group=0)
 async def inline_query_handler(client: Client, inline_query):
