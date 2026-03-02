@@ -51,7 +51,6 @@ async def file_handler(client: Client, message: Message):
             text=f"❌ **{small_caps('access forbidden')}**\n\n📡 ᴛʜɪꜱ ɪꜱ ᴀ ᴘʀɪᴠᴀᴛᴇ ʙᴏᴛ.",
             reply_to_message_id=message.id,
             disable_web_page_preview=True,
-        
         )
         return
 
@@ -66,7 +65,6 @@ async def file_handler(client: Client, message: Message):
             ),
             reply_to_message_id=message.id,
             disable_web_page_preview=True,
-        
         )
         return
 
@@ -100,7 +98,6 @@ async def file_handler(client: Client, message: Message):
             text="❌ ᴜɴꜱᴜᴘᴘᴏʀᴛᴇᴅ ꜰɪʟᴇ ᴛʏᴘᴇ",
             reply_to_message_id=message.id,
             disable_web_page_preview=True,
-        
         )
         return
 
@@ -115,7 +112,6 @@ async def file_handler(client: Client, message: Message):
             ),
             reply_to_message_id=message.id,
             disable_web_page_preview=True,
-        
         )
         return
 
@@ -124,7 +120,6 @@ async def file_handler(client: Client, message: Message):
         text="⏳ ᴘʀᴏᴄᴇꜱꜱɪɴɢ ʏᴏᴜʀ ꜰɪʟᴇ…",
         reply_to_message_id=message.id,
         disable_web_page_preview=True,
-    
     )
 
     try:
@@ -138,7 +133,6 @@ async def file_handler(client: Client, message: Message):
             f"❌ **{small_caps('failed to process file')}**\n\n"
             "ᴄᴏᴜʟᴅ ɴᴏᴛ ꜰᴏʀᴡᴀʀᴅ ꜰɪʟᴇ ᴛᴏ ꜱᴛᴏʀᴀɢᴇ.\n"
             f"`{exc}`",
-        
         )
         return
 
@@ -158,7 +152,6 @@ async def file_handler(client: Client, message: Message):
             f"❌ **{small_caps('file processing failed')}**\n\n"
             "ꜰɪʟᴇ ᴄᴏᴜʟᴅ ɴᴏᴛ ʙᴇ ʀᴇᴀᴅ ꜰʀᴏᴍ ᴛᴇʟᴇɢʀᴀᴍ ᴀꜰᴛᴇʀ ꜰᴏʀᴡᴀʀᴅɪɴɢ.\n"
             "ᴛʜɪꜱ ᴜꜱᴜᴀʟʟʏ ʜᴀᴘᴘᴇɴꜱ ᴡɪᴛʜ ᴠᴇʀʏ ʟᴀʀɢᴇ ꜰɪʟᴇꜱ. ᴘʟᴇᴀꜱᴇ ᴛʀʏ ᴀɢᴀɪɴ.",
-        
         )
         return
 
@@ -232,7 +225,6 @@ async def file_handler(client: Client, message: Message):
     await processing_msg.edit_text(
         text,
         reply_markup=InlineKeyboardMarkup(buttons),
-    
     )
 
 
@@ -240,7 +232,6 @@ async def file_handler(client: Client, message: Message):
 async def files_command(client: Client, message: Message):
     user_id = message.from_user.id
 
-    # ── Owner: /files <target_user_id> ──────────────────────────────────
     if len(message.command) > 1:
         if user_id not in Config.OWNER_ID:
             await client.send_message(
@@ -288,17 +279,14 @@ async def files_command(client: Client, message: Message):
             text=caption,
             reply_to_message_id=message.id,
             reply_markup=markup,
-        
         )
         return
 
-    # ── Normal user: own files ───────────────────────────────────────────
     if not await check_access(user_id):
         await client.send_message(
             chat_id=message.chat.id,
             text=f"❌ **{small_caps('access forbidden')}**",
             reply_to_message_id=message.id,
-        
         )
         return
 
@@ -325,19 +313,15 @@ async def files_command(client: Client, message: Message):
         text=caption,
         reply_to_message_id=message.id,
         reply_markup=markup,
-    
     )
 
 
-# ── Helper: build paginated file list markup ─────────────────────────────────
 async def _build_user_files_markup(
     client,
     user_id: str,
     page: int,
     owner_view: bool,
 ) -> tuple:
-    """Return (InlineKeyboardMarkup, caption_text) for a paginated file list."""
-
     skip           = (page - 1) * PAGE_SIZE
     user_files_cur, total_files = await db.find_files(user_id, [skip + 1, PAGE_SIZE])
 
@@ -355,7 +339,6 @@ async def _build_user_files_markup(
 
     total_pages = math.ceil(total_files / PAGE_SIZE) if total_files else 1
 
-    # ── Pagination row ──────────────────────────────────────────────────
     if total_files > PAGE_SIZE:
         nav = []
         if page > 1:
@@ -384,11 +367,9 @@ async def _build_user_files_markup(
 
         file_list.append(nav)
 
-    # ── Empty state ─────────────────────────────────────────────────────
     if not file_list or (len(file_list) == 1 and file_list[0][0].callback_data == "N/A"):
         file_list = [[InlineKeyboardButton("ᴇᴍᴘᴛʏ", callback_data="N/A")]]
 
-    # ── Close button ────────────────────────────────────────────────────
     file_list.append([InlineKeyboardButton("ᴄʟᴏsᴇ", callback_data="close")])
 
     markup = InlineKeyboardMarkup(file_list)
@@ -418,7 +399,6 @@ async def _build_user_files_markup(
     return markup, caption
 
 
-# ── Pagination callback: user files ──────────────────────────────────────────
 @Client.on_callback_query(filters.regex(r"^userfiles_\d+$"), group=0)
 async def cb_user_files_page(client: Client, callback: CallbackQuery):
     page    = int(callback.data.replace("userfiles_", ""))
@@ -435,7 +415,6 @@ async def cb_user_files_page(client: Client, callback: CallbackQuery):
     await callback.answer()
 
 
-# ── Pagination callback: owner viewing user files ────────────────────────────
 @Client.on_callback_query(filters.regex(r"^ownfiles_"), group=0)
 async def cb_own_files_page(client: Client, callback: CallbackQuery):
     if callback.from_user.id not in Config.OWNER_ID:
@@ -458,7 +437,6 @@ async def cb_own_files_page(client: Client, callback: CallbackQuery):
     await callback.answer()
 
 
-# ── "myfile_" callback — user clicking a file from the paginated list ─────────
 @Client.on_callback_query(filters.regex(r"^myfile_"), group=0)
 async def cb_myfile(client: Client, callback: CallbackQuery):
     # Format: myfile_<_id_hex>_<page>
@@ -508,7 +486,6 @@ async def cb_myfile(client: Client, callback: CallbackQuery):
     await callback.answer()
 
 
-# ── Close callback ────────────────────────────────────────────────────────────
 @Client.on_callback_query(filters.regex(r"^close$"), group=0)
 async def cb_close(client: Client, callback: CallbackQuery):
     try:
@@ -518,7 +495,6 @@ async def cb_close(client: Client, callback: CallbackQuery):
     await callback.answer()
 
 
-# ── Owner: view file detail (with delete option) ─────────────────────────────
 @Client.on_callback_query(filters.regex(r"^ownview_"), group=0)
 async def cb_owner_view_file(client: Client, callback: CallbackQuery):
     if callback.from_user.id not in Config.OWNER_ID:
@@ -574,7 +550,6 @@ async def cb_owner_view_file(client: Client, callback: CallbackQuery):
     await callback.answer()
 
 
-# ── Owner: revoke a specific file ────────────────────────────────────────────
 @Client.on_callback_query(filters.regex(r"^ownrevoke_"), group=0)
 async def cb_owner_revoke_file(client: Client, callback: CallbackQuery):
     if callback.from_user.id not in Config.OWNER_ID:
@@ -586,12 +561,48 @@ async def cb_owner_revoke_file(client: Client, callback: CallbackQuery):
     file_hash = parts[1]
     target_id = parts[2] if len(parts) > 2 else ""
 
+    # Guard against accidentally matching ownrevoke_do_ prefix
+    if file_hash == "do":
+        return
+
     file_data = await db.get_file_by_hash(file_hash)
     if not file_data:
         await callback.answer("❌ ꜰɪʟᴇ ɴᴏᴛ ꜰᴏᴜɴᴅ ᴏʀ ᴀʟʀᴇᴀᴅʏ ᴅᴇʟᴇᴛᴇᴅ", show_alert=True)
         return
 
-    # Delete from dump channel
+    safe_name = escape_markdown(file_data["file_name"])
+    await callback.message.edit_text(
+        f"⚠️ **Warning**\n\n"
+        f"ᴀʀᴇ ʏᴏᴜ ꜱᴜʀᴇ ʏᴏᴜ ᴡᴀɴᴛ ᴛᴏ ᴘᴇʀᴍᴀɴᴇɴᴛʟʏ ʀᴇᴠᴏᴋᴇ:\n\n"
+        f"📂 **{small_caps('file')}:** `{safe_name}`\n\n"
+        "ᴀʟʟ ʟɪɴᴋꜱ ᴡɪʟʟ ʙᴇᴄᴏᴍᴇ ɪɴᴠᴀʟɪᴅ.",
+        reply_markup=InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton("✅ ᴄᴏɴꜰɪʀᴍ", callback_data=f"ownrevoke_do_{file_hash}_{target_id}"),
+                InlineKeyboardButton("❌ ᴄᴀɴᴄᴇʟ",  callback_data=f"ownback_{target_id}"),
+            ]
+        ]),
+    )
+    await callback.answer()
+
+
+@Client.on_callback_query(filters.regex(r"^ownrevoke_do_"), group=0)
+async def cb_owner_revoke_do(client: Client, callback: CallbackQuery):
+    if callback.from_user.id not in Config.OWNER_ID:
+        await callback.answer("🚫 Owner only.", show_alert=True)
+        return
+
+    # callback_data format: ownrevoke_do_<file_hash>_<target_user_id>
+    raw       = callback.data[len("ownrevoke_do_"):]
+    parts     = raw.split("_", 1)
+    file_hash = parts[0]
+    target_id = parts[1] if len(parts) > 1 else ""
+
+    file_data = await db.get_file_by_hash(file_hash)
+    if not file_data:
+        await callback.answer("❌ ꜰɪʟᴇ ɴᴏᴛ ꜰᴏᴜɴᴅ ᴏʀ ᴀʟʀᴇᴀᴅʏ ᴅᴇʟᴇᴛᴇᴅ", show_alert=True)
+        return
+
     try:
         await client.delete_messages(Config.FLOG_CHAT_ID, int(file_data["message_id"]))
     except Exception as exc:
@@ -610,12 +621,10 @@ async def cb_owner_revoke_file(client: Client, callback: CallbackQuery):
                 callback_data=f"ownfiles_{target_id}_1",
             )],
         ]),
-    
     )
     await callback.answer("✅ ꜰɪʟᴇ ʀᴇᴠᴏᴋᴇᴅ!", show_alert=False)
 
 
-# ── Owner: back to user files list (page 1) ───────────────────────────────────
 @Client.on_callback_query(filters.regex(r"^ownback_"), group=0)
 async def cb_owner_back(client: Client, callback: CallbackQuery):
     if callback.from_user.id not in Config.OWNER_ID:
@@ -635,7 +644,6 @@ async def cb_owner_back(client: Client, callback: CallbackQuery):
     await callback.answer()
 
 
-# ── User: view own file detail ────────────────────────────────────────────────
 @Client.on_callback_query(filters.regex(r"^view_"), group=0)
 async def cb_view_file(client: Client, callback: CallbackQuery):
     message_id = callback.data.replace("view_", "", 1)
@@ -676,14 +684,46 @@ async def cb_view_file(client: Client, callback: CallbackQuery):
     await callback.answer()
 
 
-# ── User: revoke own file ─────────────────────────────────────────────────────
 @Client.on_callback_query(filters.regex(r"^revoke_"), group=0)
 async def cb_revoke(client: Client, callback: CallbackQuery):
-    file_hash = callback.data.replace("revoke_", "", 1)
+    # Strip prefix; guard against accidentally matching revoke_do_ or revoke_cancel
+    raw = callback.data[len("revoke_"):]
+    if raw.startswith("do_") or raw == "cancel":
+        return
+
+    file_hash = raw
+    file_data = await db.get_file_by_hash(file_hash)
+    if not file_data:
+        await callback.answer("❌ ꜰɪʟᴇ ɴᴏᴛ ꜰᴏᴜɴᴅ ᴏʀ ᴀʟʀᴇᴀᴅʏ ᴅᴇʟᴇᴛᴇᴅ", show_alert=True)
+        return
+
+    safe_name = escape_markdown(file_data["file_name"])
+    await callback.message.edit_text(
+        f"⚠️ **Warning**\n\n"
+        f"ᴀʀᴇ ʏᴏᴜ ꜱᴜʀᴇ ʏᴏᴜ ᴡᴀɴᴛ ᴛᴏ ᴘᴇʀᴍᴀɴᴇɴᴛʟʏ ʀᴇᴠᴏᴋᴇ:\n\n"
+        f"📂 **{small_caps('file')}:** `{safe_name}`\n\n"
+        "ᴀʟʟ ʟɪɴᴋꜱ ᴡɪʟʟ ʙᴇᴄᴏᴍᴇ ɪɴᴠᴀʟɪᴅ.",
+        reply_markup=InlineKeyboardMarkup([
+            [
+                InlineKeyboardButton("✅ ᴄᴏɴꜰɪʀᴍ", callback_data=f"revoke_do_{file_hash}"),
+                InlineKeyboardButton("❌ ᴄᴀɴᴄᴇʟ",  callback_data="revoke_cancel"),
+            ]
+        ]),
+    )
+    await callback.answer()
+
+
+@Client.on_callback_query(filters.regex(r"^revoke_do_"), group=0)
+async def cb_revoke_do(client: Client, callback: CallbackQuery):
+    file_hash = callback.data[len("revoke_do_"):]
 
     file_data = await db.get_file_by_hash(file_hash)
     if not file_data:
         await callback.answer("❌ ꜰɪʟᴇ ɴᴏᴛ ꜰᴏᴜɴᴅ ᴏʀ ᴀʟʀᴇᴀᴅʏ ᴅᴇʟᴇᴛᴇᴅ", show_alert=True)
+        try:
+            await callback.message.delete()
+        except Exception:
+            pass
         return
 
     await db.delete_file(file_data["message_id"])
@@ -696,12 +736,19 @@ async def cb_revoke(client: Client, callback: CallbackQuery):
         reply_markup=InlineKeyboardMarkup([
             [InlineKeyboardButton(f"⬅️ {small_caps('back to files')}", callback_data="userfiles_1")],
         ]),
-    
     )
     await callback.answer("✅ ꜰɪʟᴇ ʀᴇᴠᴏᴋᴇᴅ!", show_alert=False)
 
 
-# ── User: back to own files list (page 1) ─────────────────────────────────────
+@Client.on_callback_query(filters.regex(r"^revoke_cancel$"), group=0)
+async def cb_revoke_cancel(client: Client, callback: CallbackQuery):
+    await callback.answer("❌ ᴄᴀɴᴄᴇʟʟᴇᴅ.", show_alert=False)
+    try:
+        await callback.message.edit_text("❌ **Revoke cancelled.**")
+    except Exception:
+        pass
+
+
 @Client.on_callback_query(filters.regex(r"^back_to_files$"), group=0)
 async def cb_back_to_files(client: Client, callback: CallbackQuery):
     user_id = str(callback.from_user.id)
@@ -715,11 +762,6 @@ async def cb_back_to_files(client: Client, callback: CallbackQuery):
         pass
     await callback.answer()
 
-
-# ════════════════════════════════════════════════════════════════════════════ #
-#  Send file callback — copy_message from storage to user                     #
-#  Triggered by the "📨 Send File" button                                     #
-# ════════════════════════════════════════════════════════════════════════════ #
 
 @Client.on_callback_query(filters.regex(r"^sendfile_"), group=0)
 async def cb_send_file(client: Client, callback: CallbackQuery):
@@ -751,11 +793,6 @@ async def cb_send_file(client: Client, callback: CallbackQuery):
         except Exception:
             pass
 
-
-# ════════════════════════════════════════════════════════════════════════════ #
-#  Inline query — share file info card to any chat                            #
-#  Triggered when user taps "🔁 Share" (switch_inline_query)                  #
-# ════════════════════════════════════════════════════════════════════════════ #
 
 @Client.on_inline_query(group=0)
 async def inline_query_handler(client: Client, inline_query):
