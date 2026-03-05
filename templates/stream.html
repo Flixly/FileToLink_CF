@@ -1,286 +1,880 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>{{ file_name }} | Video Player</title>
-<link rel="icon" type="image/jpeg" href="https://i.ibb.co/2YsHg8tf/IMG-3062.jpg">
-<link rel="shortcut icon" type="image/jpeg" href="https://i.ibb.co/2YsHg8tf/IMG-3062.jpg">
-<link rel="apple-touch-icon" href="https://i.ibb.co/2YsHg8tf/IMG-3062.jpg">
-<meta property="og:title" content="{{ file_name }}">
-<meta property="og:image" content="https://i.ibb.co/KzqHfL05/photo-2026-02-07-13-38-13.jpg">
-<meta property="og:description" content="Watch {{ file_name }} — stream or download instantly.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-<link href="https://cdn.plyr.io/3.6.9/plyr.css" rel="stylesheet">
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
-<style>
-:root{--bg:#080b10;--card:#131922;--border:rgba(255,255,255,.07);--gold:#f0b429;--gold2:#ffd166;--text:#e8edf5;--muted:#6b7a99;--r:14px}
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{overscroll-behavior:none;background:var(--bg)}
-body{background:var(--bg);color:var(--text);font-family:'Sora',sans-serif;min-height:100vh;overflow-x:hidden;overscroll-behavior:none}
-.orb{position:fixed;border-radius:50%;filter:blur(90px);opacity:.18;pointer-events:none;z-index:0;animation:drift 14s ease-in-out infinite alternate}
-.orb1{width:500px;height:500px;background:#f0b429;top:-150px;left:-150px;animation-duration:16s}
-.orb2{width:400px;height:400px;background:#3b82f6;bottom:-100px;right:-100px;animation-duration:20s;animation-delay:-6s}
-.orb3{width:300px;height:300px;background:#a855f7;top:40%;left:50%;animation-duration:12s;animation-delay:-3s}
-@keyframes drift{from{transform:translate(0,0) scale(1)}to{transform:translate(30px,20px) scale(1.05)}}
-.wrap{position:relative;z-index:1;max-width:900px;margin:0 auto;padding:24px 16px 60px}
-.site-header{display:flex;align-items:center;justify-content:space-between;padding-bottom:28px}
-.brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:1.05rem;letter-spacing:-.02em}
-.brand-dot{width:10px;height:10px;border-radius:50%;background:var(--gold);box-shadow:0 0 8px var(--gold);animation:pdot 2s ease-in-out infinite}
-@keyframes pdot{0%,100%{box-shadow:0 0 8px var(--gold)}50%{box-shadow:0 0 20px var(--gold)}}
-.hcopy{background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:8px;padding:7px 14px;font-size:.78rem;font-family:'JetBrains Mono',monospace;color:var(--muted);cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:7px}
-.hcopy:hover{background:rgba(240,180,41,.12);color:var(--gold);border-color:var(--gold)}
-.file-title{font-size:clamp(1rem,2.5vw,1.35rem);font-weight:600;letter-spacing:-.02em;line-height:1.4;word-break:break-word;margin-bottom:6px}
-.meta-row{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:20px}
-.bp{font-size:.7rem;font-family:'JetBrains Mono',monospace;padding:3px 10px;border-radius:999px;letter-spacing:.04em;font-weight:500}
-.bp-s{background:rgba(240,180,41,.15);color:var(--gold);border:1px solid rgba(240,180,41,.3)}
-.bp-h{background:rgba(59,130,246,.15);color:#60a5fa;border:1px solid rgba(59,130,246,.3)}
-.bp-k{background:rgba(34,197,94,.12);color:#4ade80;border:1px solid rgba(34,197,94,.3)}
-.bp-sz{background:rgba(167,139,250,.12);color:#a78bfa;border:1px solid rgba(167,139,250,.3)}
-.player-card{background:var(--card);border:1px solid var(--border);border-radius:18px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.5),0 0 40px rgba(240,180,41,.12);margin-bottom:20px;transition:box-shadow .3s}
-.player-card:hover{box-shadow:0 28px 70px rgba(0,0,0,.6),0 0 60px rgba(240,180,41,.16)}
-.plyr{border-radius:0}
-.plyr--video .plyr__controls{background:linear-gradient(transparent,rgba(0,0,0,.85))}
-.plyr__control--overlaid{background:var(--gold)!important}
-.plyr__control--overlaid:hover{background:var(--gold2)!important}
-.plyr--full-ui input[type=range]{color:var(--gold)}
-/* non-video file card */
-.doc-card{padding:40px 24px;text-align:center;color:var(--muted)}
-.doc-card i{font-size:3rem;margin-bottom:16px;color:var(--gold);opacity:.7}
-.doc-card p{font-size:.9rem}
-.speed-strip{display:flex;align-items:center;gap:8px;padding:14px 18px;border-top:1px solid var(--border);background:rgba(255,255,255,.02);flex-wrap:wrap}
-.slbl{font-size:.72rem;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-right:4px}
-.sbtn,.pip-btn{background:rgba(255,255,255,.06);border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:4px 11px;font-size:.72rem;font-family:'JetBrains Mono',monospace;cursor:pointer;transition:all .18s}
-.sbtn:hover,.sbtn.active{background:rgba(240,180,41,.15);color:var(--gold);border-color:rgba(240,180,41,.4)}
-.pip-btn{margin-left:auto;display:flex;align-items:center;gap:5px}
-.pip-btn:hover{background:rgba(59,130,246,.12);color:#60a5fa;border-color:rgba(59,130,246,.35)}
-.actions-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:20px}
-.ab{display:flex;align-items:center;justify-content:center;gap:9px;padding:13px 10px;border-radius:var(--r);font-size:.82rem;font-weight:600;cursor:pointer;border:1px solid transparent;transition:transform .18s,box-shadow .18s,background .18s;position:relative;overflow:hidden}
-.ab::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.08),transparent 60%);pointer-events:none}
-.ab:hover{transform:translateY(-2px)}.ab:active{transform:translateY(0)}
-.b-vlc{background:#1d2230;border-color:rgba(255,106,0,.35);color:#ff6a00}.b-vlc:hover{background:rgba(255,106,0,.15);box-shadow:0 8px 24px rgba(255,106,0,.2)}
-.b-mx{background:#1a2218;border-color:rgba(34,197,94,.3);color:#4ade80}.b-mx:hover{background:rgba(34,197,94,.12);box-shadow:0 8px 24px rgba(34,197,94,.15)}
-.b-pl{background:#211c10;border-color:rgba(251,191,36,.3);color:#fbbf24}.b-pl:hover{background:rgba(251,191,36,.12);box-shadow:0 8px 24px rgba(251,191,36,.15)}
-.b-km{background:#12182a;border-color:rgba(96,165,250,.3);color:#60a5fa}.b-km:hover{background:rgba(96,165,250,.1);box-shadow:0 8px 24px rgba(96,165,250,.15)}
-.b-sp{background:#1e1528;border-color:rgba(167,139,250,.3);color:#a78bfa}.b-sp:hover{background:rgba(167,139,250,.1);box-shadow:0 8px 24px rgba(167,139,250,.15)}
-.b-dl{background:linear-gradient(135deg,#f0b429,#e09000);border-color:transparent;color:#080b10;font-weight:700}.b-dl:hover{box-shadow:0 8px 30px rgba(240,180,41,.4);filter:brightness(1.08)}
-.info-panel{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:18px 22px;margin-bottom:20px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
-.ii{display:flex;flex-direction:column;gap:2px}
-.ii .lbl{font-size:.65rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-family:'JetBrains Mono',monospace}
-.ii .val{font-size:.82rem;font-weight:600;font-family:'JetBrains Mono',monospace}
-.idiv{width:1px;height:36px;background:var(--border)}
-.clr{margin-left:auto}
-.clbtn{background:rgba(240,180,41,.1);border:1px solid rgba(240,180,41,.3);border-radius:8px;padding:8px 16px;color:var(--gold);font-size:.78rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:7px;transition:all .2s;white-space:nowrap}
-.clbtn:hover{background:rgba(240,180,41,.2);box-shadow:0 4px 16px rgba(240,180,41,.2)}
-.hk-panel{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px 22px;margin-bottom:20px}
-.hk-title{font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-bottom:12px;display:flex;align-items:center;gap:8px}
-.hk-title::after{content:'';flex:1;height:1px;background:var(--border)}
-.hk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
-.hk{display:flex;align-items:center;gap:8px;font-size:.75rem;color:var(--muted)}
-.kbd{display:inline-flex;align-items:center;justify-content:center;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-bottom-width:2px;border-radius:5px;padding:2px 7px;font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--text);min-width:28px;text-align:center}
-.site-footer{text-align:center;font-size:.72rem;color:var(--muted);padding-top:10px;font-family:'JetBrains Mono',monospace}
-.site-footer a{color:var(--gold);text-decoration:none}
-.toast-wrap{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);z-index:9999;pointer-events:none}
-.tp{background:rgba(7,9,15,.95);border:1px solid var(--border);backdrop-filter:blur(12px);border-radius:999px;padding:10px 22px;font-size:.82rem;color:var(--text);display:flex;align-items:center;gap:9px;box-shadow:0 8px 32px rgba(0,0,0,.4);opacity:0;transform:translateY(12px);transition:opacity .25s,transform .25s}
-.tp.show{opacity:1;transform:translateY(0)}
-.ti{color:var(--gold)}
-@media(max-width:600px){.actions-grid{grid-template-columns:repeat(2,1fr)}.info-panel{flex-direction:column;align-items:flex-start;gap:12px}.clr{margin-left:0}.idiv{display:none}}
-::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:3px}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ file_name }} | ꜰɪʟᴇ ꜱᴛʀᴇᴀᴍᴇʀ</title>
+  <link rel="icon" type="image/jpeg" href="https://i.ibb.co/2YsHg8tf/IMG-3062.jpg">
+  <link rel="shortcut icon" type="image/jpeg" href="https://i.ibb.co/2YsHg8tf/IMG-3062.jpg">
+  <link rel="apple-touch-icon" href="https://i.ibb.co/2YsHg8tf/IMG-3062.jpg">
+  <meta property="og:title" content="{{ file_name }}">
+  <meta property="og:image" content="https://i.ibb.co/KzqHfL05/photo-2026-02-07-13-38-13.jpg">
+  <meta property="og:description" content="Watch {{ file_name }} — stream or download instantly.">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link href="https://cdn.plyr.io/3.6.9/plyr.css" rel="stylesheet">
+  <style>
+    /* ── CSS Custom Properties ──────────────────────────────── */
+    :root,
+    [data-theme="dark"] {
+      --bg-base:            #0f0c29;
+      --bg-gradient:        linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+      --card-bg:            rgba(255,255,255,0.05);
+      --card-border:        rgba(255,255,255,.1);
+      --card-shadow:        0 24px 64px rgba(0,0,0,.4);
+      --panel-bg:           rgba(255,255,255,0.05);
+      --panel-border:       rgba(255,255,255,.1);
+      --info-panel-bg:      rgba(255,255,255,0.05);
+      --info-panel-border:  rgba(255,255,255,.1);
+      --text-primary:       #ffffff;
+      --text-secondary:     rgba(255,255,255,.55);
+      --text-muted:         rgba(255,255,255,.35);
+      --text-mono:          rgba(255,255,255,.5);
+      --btn-ghost-bg:       rgba(255,255,255,.07);
+      --btn-ghost-border:   rgba(255,255,255,.12);
+      --btn-ghost-color:    rgba(255,255,255,.6);
+      --btn-ghost-hover-bg: rgba(240,180,41,.12);
+      --btn-ghost-hover-c:  #f0b429;
+      --speed-active-bg:    rgba(240,180,41,.15);
+      --speed-active-color: #f0b429;
+      --speed-active-border:rgba(240,180,41,.4);
+      --divider:            rgba(255,255,255,.07);
+      --kbd-bg:             rgba(255,255,255,.07);
+      --kbd-border:         rgba(255,255,255,.12);
+      --footer-link:        rgba(255,215,0,.75);
+      --footer-hover:       #ffd700;
+      --particle-color:     rgba(255,255,255,0.06);
+      --theme-toggle-bg:    rgba(255,255,255,.08);
+      --theme-toggle-border:rgba(255,255,255,.15);
+      --theme-toggle-color: rgba(255,255,255,.7);
+      --brand-text:         rgba(255,255,255,.85);
+      --badge-stream-bg:    rgba(240,180,41,.15);
+      --badge-stream-color: #f0b429;
+      --badge-stream-border:rgba(240,180,41,.3);
+      --badge-hd-bg:        rgba(59,130,246,.15);
+      --badge-hd-color:     #60a5fa;
+      --badge-hd-border:    rgba(59,130,246,.3);
+      --badge-sec-bg:       rgba(34,197,94,.12);
+      --badge-sec-color:    #4ade80;
+      --badge-sec-border:   rgba(34,197,94,.3);
+      --badge-sz-bg:        rgba(167,139,250,.12);
+      --badge-sz-color:     #a78bfa;
+      --badge-sz-border:    rgba(167,139,250,.3);
+      --player-card-shadow: 0 24px 60px rgba(0,0,0,.5), 0 0 40px rgba(102,126,234,.12);
+      --player-card-hover:  0 28px 70px rgba(0,0,0,.6), 0 0 60px rgba(102,126,234,.18);
+      --gold:               #f0b429;
+      --gold2:              #ffd166;
+      --status-playing:     #4ade80;
+      --status-paused:      #fbbf24;
+      --status-buffer:      #60a5fa;
+      --status-error:       #f87171;
+      --toast-bg:           rgba(15,12,41,.95);
+      --b-vlc-bg:           rgba(255,255,255,.05);
+      --b-vlc-border:       rgba(255,106,0,.35);
+      --b-vlc-color:        #ff6a00;
+      --b-vlc-hover:        rgba(255,106,0,.15);
+      --b-mx-bg:            rgba(255,255,255,.05);
+      --b-mx-border:        rgba(34,197,94,.3);
+      --b-mx-color:         #4ade80;
+      --b-mx-hover:         rgba(34,197,94,.12);
+      --b-pl-bg:            rgba(255,255,255,.05);
+      --b-pl-border:        rgba(251,191,36,.3);
+      --b-pl-color:         #fbbf24;
+      --b-pl-hover:         rgba(251,191,36,.12);
+      --b-km-bg:            rgba(255,255,255,.05);
+      --b-km-border:        rgba(96,165,250,.3);
+      --b-km-color:         #60a5fa;
+      --b-km-hover:         rgba(96,165,250,.1);
+      --b-sp-bg:            rgba(255,255,255,.05);
+      --b-sp-border:        rgba(167,139,250,.3);
+      --b-sp-color:         #a78bfa;
+      --b-sp-hover:         rgba(167,139,250,.1);
+      --hk-section-bg:      rgba(255,255,255,0.05);
+      --hk-section-border:  rgba(255,255,255,.1);
+    }
+
+    [data-theme="light"] {
+      --bg-base:            #f0f2f8;
+      --bg-gradient:        linear-gradient(135deg, #e8eaf6 0%, #ede7f6 50%, #e3e8f0 100%);
+      --card-bg:            rgba(255,255,255,0.85);
+      --card-border:        rgba(102,126,234,.18);
+      --card-shadow:        0 24px 64px rgba(102,126,234,.15);
+      --panel-bg:           rgba(255,255,255,0.9);
+      --panel-border:       rgba(102,126,234,.15);
+      --info-panel-bg:      rgba(255,255,255,0.9);
+      --info-panel-border:  rgba(102,126,234,.15);
+      --text-primary:       #1a1a2e;
+      --text-secondary:     #4a5568;
+      --text-muted:         #8896a8;
+      --text-mono:          #6b7280;
+      --btn-ghost-bg:       rgba(102,126,234,.08);
+      --btn-ghost-border:   rgba(102,126,234,.2);
+      --btn-ghost-color:    #4a5568;
+      --btn-ghost-hover-bg: rgba(240,180,41,.12);
+      --btn-ghost-hover-c:  #b37d0a;
+      --speed-active-bg:    rgba(240,180,41,.15);
+      --speed-active-color: #b37d0a;
+      --speed-active-border:rgba(240,180,41,.4);
+      --divider:            rgba(102,126,234,.1);
+      --kbd-bg:             rgba(102,126,234,.08);
+      --kbd-border:         rgba(102,126,234,.15);
+      --footer-link:        #7c6c1a;
+      --footer-hover:       #5a4c10;
+      --particle-color:     rgba(102,126,234,0.06);
+      --theme-toggle-bg:    rgba(102,126,234,.1);
+      --theme-toggle-border:rgba(102,126,234,.25);
+      --theme-toggle-color: #4a5568;
+      --brand-text:         #1a1a2e;
+      --badge-stream-bg:    rgba(240,180,41,.15);
+      --badge-stream-color: #b37d0a;
+      --badge-stream-border:rgba(240,180,41,.3);
+      --badge-hd-bg:        rgba(59,130,246,.12);
+      --badge-hd-color:     #1d4ed8;
+      --badge-hd-border:    rgba(59,130,246,.25);
+      --badge-sec-bg:       rgba(34,197,94,.1);
+      --badge-sec-color:    #16a34a;
+      --badge-sec-border:   rgba(34,197,94,.25);
+      --badge-sz-bg:        rgba(167,139,250,.1);
+      --badge-sz-color:     #6d28d9;
+      --badge-sz-border:    rgba(167,139,250,.25);
+      --player-card-shadow: 0 24px 60px rgba(102,126,234,.15);
+      --player-card-hover:  0 28px 70px rgba(102,126,234,.2);
+      --gold:               #b37d0a;
+      --gold2:              #d9a51a;
+      --status-playing:     #16a34a;
+      --status-paused:      #d97706;
+      --status-buffer:      #2563eb;
+      --status-error:       #dc2626;
+      --toast-bg:           rgba(255,255,255,.97);
+      --b-vlc-bg:           rgba(255,106,0,.06);
+      --b-vlc-border:       rgba(255,106,0,.3);
+      --b-vlc-color:        #c45200;
+      --b-vlc-hover:        rgba(255,106,0,.12);
+      --b-mx-bg:            rgba(34,197,94,.06);
+      --b-mx-border:        rgba(34,197,94,.25);
+      --b-mx-color:         #15803d;
+      --b-mx-hover:         rgba(34,197,94,.1);
+      --b-pl-bg:            rgba(251,191,36,.06);
+      --b-pl-border:        rgba(251,191,36,.25);
+      --b-pl-color:         #92400e;
+      --b-pl-hover:         rgba(251,191,36,.1);
+      --b-km-bg:            rgba(96,165,250,.06);
+      --b-km-border:        rgba(96,165,250,.25);
+      --b-km-color:         #1e40af;
+      --b-km-hover:         rgba(96,165,250,.1);
+      --b-sp-bg:            rgba(167,139,250,.06);
+      --b-sp-border:        rgba(167,139,250,.25);
+      --b-sp-color:         #5b21b6;
+      --b-sp-hover:         rgba(167,139,250,.1);
+      --hk-section-bg:      rgba(255,255,255,0.9);
+      --hk-section-border:  rgba(102,126,234,.15);
+    }
+
+    /* ── Reset ──────────────────────────────────────────────── */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html {
+      min-height: 100%;
+      background-color: var(--bg-base);
+      overscroll-behavior: none;
+    }
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: var(--bg-gradient) fixed;
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+      overscroll-behavior: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 30px 16px 60px;
+      transition: background .4s ease, color .4s ease;
+    }
+
+    /* ── Theme Toggle ────────────────────────────────────────── */
+    .theme-toggle {
+      position: fixed;
+      top: 18px; right: 18px;
+      z-index: 1000;
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      background: var(--theme-toggle-bg);
+      border: 1px solid var(--theme-toggle-border);
+      color: var(--theme-toggle-color);
+      font-size: 1.1rem;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all .3s ease;
+      backdrop-filter: blur(12px);
+    }
+    .theme-toggle:hover {
+      transform: scale(1.1) rotate(20deg);
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #fff;
+      border-color: transparent;
+      box-shadow: 0 4px 18px rgba(102,126,234,.45);
+    }
+
+    /* ── Background Particles ───────────────────────────────── */
+    .bg-animation {
+      position: fixed; top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 0; overflow: hidden; pointer-events: none;
+    }
+    .bg-animation span {
+      position: absolute; display: block;
+      border-radius: 50%;
+      background: var(--particle-color);
+      animation: floatUp 25s linear infinite;
+      bottom: -200px;
+    }
+    .bg-animation span:nth-child(1)  { left:10%; width:40px;  height:40px;  animation-delay:0s;   animation-duration:20s; }
+    .bg-animation span:nth-child(2)  { left:25%; width:15px;  height:15px;  animation-delay:2s;   animation-duration:14s; }
+    .bg-animation span:nth-child(3)  { left:50%; width:60px;  height:60px;  animation-delay:4s;   animation-duration:22s; }
+    .bg-animation span:nth-child(4)  { left:70%; width:20px;  height:20px;  animation-delay:1s;   animation-duration:18s; }
+    .bg-animation span:nth-child(5)  { left:85%; width:80px;  height:80px;  animation-delay:6s;   animation-duration:30s; }
+    .bg-animation span:nth-child(6)  { left:35%; width:25px;  height:25px;  animation-delay:8s;   animation-duration:16s; }
+    .bg-animation span:nth-child(7)  { left:60%; width:12px;  height:12px;  animation-delay:3s;   animation-duration:12s; }
+    .bg-animation span:nth-child(8)  { left:15%; width:90px;  height:90px;  animation-delay:10s;  animation-duration:35s; }
+    .bg-animation span:nth-child(9)  { left:90%; width:30px;  height:30px;  animation-delay:5s;   animation-duration:24s; }
+    .bg-animation span:nth-child(10) { left:45%; width:18px;  height:18px;  animation-delay:12s;  animation-duration:28s; }
+    @keyframes floatUp {
+      0%   { transform: translateY(0) rotate(0deg);      opacity: 0.7; }
+      100% { transform: translateY(-110vh) rotate(720deg); opacity: 0; }
+    }
+
+    /* ── Container ──────────────────────────────────────────── */
+    .container {
+      position: relative; z-index: 1;
+      width: 100%; max-width: 900px;
+      animation: fadeInDown .7s ease both;
+    }
+    @keyframes fadeInDown {
+      from { opacity:0; transform:translateY(-30px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+
+    /* ── Site Header ─────────────────────────────────────────── */
+    .site-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding-bottom: 28px;
+    }
+    .brand {
+      display: flex; align-items: center; gap: 10px;
+      font-weight: 800; font-size: 1rem;
+      color: var(--brand-text);
+      letter-spacing: -.02em;
+    }
+    .brand-icon {
+      width: 38px; height: 38px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: .95rem; color: #fff;
+      box-shadow: 0 6px 18px rgba(102,126,234,.4);
+      flex-shrink: 0;
+    }
+    .brand-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--gold);
+      box-shadow: 0 0 8px var(--gold);
+      animation: pdot 2s ease-in-out infinite;
+      flex-shrink: 0;
+    }
+    @keyframes pdot { 0%,100%{ box-shadow:0 0 8px var(--gold); } 50%{ box-shadow:0 0 20px var(--gold); } }
+
+    .hcopy {
+      background: var(--btn-ghost-bg);
+      border: 1px solid var(--btn-ghost-border);
+      border-radius: 10px;
+      padding: 8px 16px;
+      font-size: .78rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--btn-ghost-color);
+      cursor: pointer;
+      display: flex; align-items: center; gap: 7px;
+      transition: all .2s;
+    }
+    .hcopy:hover {
+      background: var(--btn-ghost-hover-bg);
+      color: var(--btn-ghost-hover-c);
+      border-color: var(--gold);
+    }
+
+    /* ── File Title & Meta ───────────────────────────────────── */
+    .file-title {
+      font-size: clamp(1.05rem, 2.5vw, 1.4rem);
+      font-weight: 800;
+      letter-spacing: -.02em;
+      line-height: 1.4;
+      word-break: break-word;
+      margin-bottom: 10px;
+      color: var(--text-primary);
+    }
+    .meta-row {
+      display: flex; align-items: center; flex-wrap: wrap;
+      gap: 8px; margin-bottom: 22px;
+    }
+    .bp {
+      font-size: .7rem;
+      font-family: 'JetBrains Mono', monospace;
+      padding: 4px 12px; border-radius: 999px;
+      letter-spacing: .04em; font-weight: 600;
+    }
+    .bp-s  { background: var(--badge-stream-bg);  color: var(--badge-stream-color); border: 1px solid var(--badge-stream-border); }
+    .bp-h  { background: var(--badge-hd-bg);      color: var(--badge-hd-color);     border: 1px solid var(--badge-hd-border); }
+    .bp-k  { background: var(--badge-sec-bg);     color: var(--badge-sec-color);    border: 1px solid var(--badge-sec-border); }
+    .bp-sz { background: var(--badge-sz-bg);      color: var(--badge-sz-color);     border: 1px solid var(--badge-sz-border); }
+
+    /* ── Player Card ─────────────────────────────────────────── */
+    .player-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--card-border);
+      border-radius: 22px;
+      overflow: hidden;
+      box-shadow: var(--player-card-shadow);
+      margin-bottom: 20px;
+      transition: box-shadow .3s;
+    }
+    .player-card:hover { box-shadow: var(--player-card-hover); }
+    .plyr { border-radius: 0; }
+    .plyr--video .plyr__controls { background: linear-gradient(transparent, rgba(0,0,0,.85)); }
+    .plyr__control--overlaid { background: linear-gradient(135deg, #667eea, #764ba2) !important; }
+    .plyr__control--overlaid:hover { background: linear-gradient(135deg, #764ba2, #f093fb) !important; }
+    .plyr--full-ui input[type=range] { color: #667eea; }
+
+    /* non-video file card */
+    .doc-card {
+      padding: 48px 24px;
+      text-align: center;
+      color: var(--text-muted);
+    }
+    .doc-card i {
+      font-size: 3.2rem; margin-bottom: 16px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .doc-card p { font-size: .9rem; color: var(--text-secondary); line-height: 1.7; }
+
+    /* ── Speed Strip ─────────────────────────────────────────── */
+    .speed-strip {
+      display: flex; align-items: center; gap: 8px;
+      padding: 14px 20px;
+      border-top: 1px solid var(--divider);
+      background: rgba(0,0,0,.08);
+      flex-wrap: wrap;
+    }
+    .slbl {
+      font-size: .7rem;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+      margin-right: 4px;
+      font-weight: 600;
+      letter-spacing: .04em;
+    }
+    .sbtn {
+      background: var(--btn-ghost-bg);
+      border: 1px solid var(--btn-ghost-border);
+      color: var(--btn-ghost-color);
+      border-radius: 7px;
+      padding: 5px 13px;
+      font-size: .72rem;
+      font-family: 'JetBrains Mono', monospace;
+      cursor: pointer;
+      transition: all .18s;
+    }
+    .sbtn:hover,
+    .sbtn.active {
+      background: var(--speed-active-bg);
+      color: var(--speed-active-color);
+      border-color: var(--speed-active-border);
+    }
+    .pip-btn {
+      margin-left: auto;
+      display: flex; align-items: center; gap: 6px;
+      background: var(--btn-ghost-bg);
+      border: 1px solid var(--btn-ghost-border);
+      color: var(--btn-ghost-color);
+      border-radius: 7px;
+      padding: 5px 14px;
+      font-size: .72rem;
+      font-family: 'JetBrains Mono', monospace;
+      cursor: pointer;
+      transition: all .18s;
+    }
+    .pip-btn:hover {
+      background: rgba(102,126,234,.12);
+      color: #667eea;
+      border-color: rgba(102,126,234,.35);
+    }
+
+    /* ── Info Panel ──────────────────────────────────────────── */
+    .info-panel {
+      background: var(--info-panel-bg);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--info-panel-border);
+      border-radius: 18px;
+      padding: 18px 24px;
+      margin-bottom: 20px;
+      display: flex; align-items: center; gap: 18px;
+      flex-wrap: wrap;
+    }
+    .ii {
+      display: flex; flex-direction: column; gap: 3px;
+    }
+    .ii .lbl {
+      font-size: .65rem;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .ii .val {
+      font-size: .82rem; font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-primary);
+    }
+    .idiv {
+      width: 1px; height: 36px;
+      background: var(--divider);
+    }
+    .clr { margin-left: auto; }
+    .clbtn {
+      background: linear-gradient(135deg, rgba(102,126,234,.15), rgba(118,75,162,.15));
+      border: 1px solid rgba(102,126,234,.3);
+      border-radius: 10px;
+      padding: 9px 18px;
+      color: #667eea;
+      font-size: .78rem; font-weight: 700;
+      cursor: pointer;
+      display: flex; align-items: center; gap: 7px;
+      transition: all .2s;
+      white-space: nowrap;
+      font-family: 'Poppins', sans-serif;
+    }
+    .clbtn:hover {
+      background: linear-gradient(135deg, rgba(102,126,234,.25), rgba(118,75,162,.25));
+      box-shadow: 0 4px 16px rgba(102,126,234,.25);
+    }
+
+    /* ── Action Buttons Grid ─────────────────────────────────── */
+    .actions-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .ab {
+      display: flex; align-items: center; justify-content: center; gap: 9px;
+      padding: 14px 12px;
+      border-radius: 15px;
+      font-size: .83rem; font-weight: 700;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: transform .18s, box-shadow .18s, background .18s;
+      position: relative; overflow: hidden;
+      font-family: 'Poppins', sans-serif;
+    }
+    .ab::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,.06), transparent 60%);
+      pointer-events: none;
+    }
+    .ab:hover  { transform: translateY(-2px); }
+    .ab:active { transform: translateY(0); }
+
+    .b-vlc { background: var(--b-vlc-bg); border-color: var(--b-vlc-border); color: var(--b-vlc-color); }
+    .b-vlc:hover { background: var(--b-vlc-hover); box-shadow: 0 8px 24px rgba(255,106,0,.2); }
+    .b-mx  { background: var(--b-mx-bg);  border-color: var(--b-mx-border);  color: var(--b-mx-color); }
+    .b-mx:hover  { background: var(--b-mx-hover);  box-shadow: 0 8px 24px rgba(34,197,94,.15); }
+    .b-pl  { background: var(--b-pl-bg);  border-color: var(--b-pl-border);  color: var(--b-pl-color); }
+    .b-pl:hover  { background: var(--b-pl-hover);  box-shadow: 0 8px 24px rgba(251,191,36,.15); }
+    .b-km  { background: var(--b-km-bg);  border-color: var(--b-km-border);  color: var(--b-km-color); }
+    .b-km:hover  { background: var(--b-km-hover);  box-shadow: 0 8px 24px rgba(96,165,250,.15); }
+    .b-sp  { background: var(--b-sp-bg);  border-color: var(--b-sp-border);  color: var(--b-sp-color); }
+    .b-sp:hover  { background: var(--b-sp-hover);  box-shadow: 0 8px 24px rgba(167,139,250,.15); }
+    .b-dl {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      border-color: transparent; color: #fff; font-weight: 800;
+    }
+    .b-dl:hover { box-shadow: 0 8px 30px rgba(102,126,234,.45); filter: brightness(1.08); }
+
+    /* ── Keyboard Shortcuts Panel ────────────────────────────── */
+    .hk-panel {
+      background: var(--hk-section-bg);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--hk-section-border);
+      border-radius: 18px;
+      padding: 18px 24px;
+      margin-bottom: 20px;
+    }
+    .hk-title {
+      font-size: .72rem;
+      text-transform: uppercase; letter-spacing: .1em;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+      margin-bottom: 14px;
+      display: flex; align-items: center; gap: 8px;
+      font-weight: 700;
+    }
+    .hk-title::after {
+      content: ''; flex: 1; height: 1px;
+      background: var(--divider);
+    }
+    .hk-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 8px;
+    }
+    .hk {
+      display: flex; align-items: center; gap: 8px;
+      font-size: .75rem;
+      color: var(--text-secondary);
+    }
+    .kbd {
+      display: inline-flex; align-items: center; justify-content: center;
+      background: var(--kbd-bg);
+      border: 1px solid var(--kbd-border);
+      border-bottom-width: 2px;
+      border-radius: 5px;
+      padding: 2px 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .68rem;
+      color: var(--text-primary);
+      min-width: 28px; text-align: center;
+    }
+
+    /* ── Footer ─────────────────────────────────────────────── */
+    .site-footer {
+      text-align: center;
+      font-size: .75rem;
+      color: var(--text-muted);
+      padding-top: 10px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .site-footer a { color: var(--footer-link); text-decoration: none; font-weight: 700; }
+    .site-footer a:hover { color: var(--footer-hover); }
+
+    /* ── Toast ───────────────────────────────────────────────── */
+    .toast-wrap {
+      position: fixed; bottom: 28px; left: 50%;
+      transform: translateX(-50%);
+      z-index: 9999; pointer-events: none;
+    }
+    .tp {
+      background: var(--toast-bg);
+      border: 1px solid var(--divider);
+      backdrop-filter: blur(12px);
+      border-radius: 999px;
+      padding: 10px 24px;
+      font-size: .82rem;
+      color: var(--text-primary);
+      display: flex; align-items: center; gap: 9px;
+      box-shadow: 0 8px 32px rgba(0,0,0,.3);
+      opacity: 0; transform: translateY(12px);
+      transition: opacity .25s, transform .25s;
+    }
+    .tp.show { opacity: 1; transform: translateY(0); }
+    .ti { color: var(--gold); }
+
+    /* ── Scrollbar ───────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: var(--bg-base); }
+    ::-webkit-scrollbar-thumb { background: rgba(102,126,234,.25); border-radius: 3px; }
+
+    /* ── Responsive ─────────────────────────────────────────── */
+    @media (max-width: 600px) {
+      .actions-grid { grid-template-columns: repeat(2, 1fr); }
+      .info-panel { flex-direction: column; align-items: flex-start; gap: 12px; }
+      .clr { margin-left: 0; }
+      .idiv { display: none; }
+    }
+  </style>
 </head>
 <body>
-<div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div>
-<div class="wrap">
-  <header class="site-header">
-    <div class="brand"><div class="brand-dot"></div>File2Link by FLiX</div>
-    <button class="hcopy" onclick="copyLink()"><i class="fa-solid fa-link"></i> Copy Link</button>
-  </header>
+  <!-- Theme Toggle -->
+  <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme" aria-label="Toggle theme">
+    <i class="fa-regular fa-circle-dot"></i>
+  </button>
 
-  <div class="file-title">{{ file_name }}</div>
-  <div class="meta-row">
-    <span class="bp bp-s"><i class="fa-solid fa-circle-play" style="margin-right:4px"></i>Stream Ready</span>
-    {% if file_type == 'video' %}<span class="bp bp-h">HD</span>{% endif %}
-    <span class="bp bp-k"><i class="fa-solid fa-shield-halved" style="margin-right:4px"></i>Secure</span>
-    <span class="bp bp-sz"><i class="fa-solid fa-database" style="margin-right:4px"></i>{{ file_size }}</span>
+  <!-- Particles -->
+  <div class="bg-animation">
+    <span></span><span></span><span></span><span></span><span></span>
+    <span></span><span></span><span></span><span></span><span></span>
   </div>
 
-  <div class="player-card">
-    {% if file_type == 'video' %}
-    <video id="player" playsinline controls preload="metadata">
-      <source src="{{ stream_url }}" type="video/mp4">
-    </video>
-    <div class="speed-strip">
-      <span class="slbl">SPEED</span>
-      <button class="sbtn" onclick="setSpeed(0.5)">0.5×</button>
-      <button class="sbtn active" onclick="setSpeed(1)">1×</button>
-      <button class="sbtn" onclick="setSpeed(1.25)">1.25×</button>
-      <button class="sbtn" onclick="setSpeed(1.5)">1.5×</button>
-      <button class="sbtn" onclick="setSpeed(2)">2×</button>
-      <button class="pip-btn" onclick="togglePiP()"><i class="fa-solid fa-window-restore"></i> PiP</button>
+  <div class="container">
+
+    <!-- ── Site Header ──────────────────────────────────────── -->
+    <header class="site-header">
+      <div class="brand">
+        <div class="brand-icon"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+        <span>File2Link</span>
+        <div class="brand-dot"></div>
+      </div>
+      <button class="hcopy" onclick="copyLink()">
+        <i class="fa-solid fa-link"></i> ᴄᴏᴘʏ ʟɪɴᴋ
+      </button>
+    </header>
+
+    <!-- ── File Info ─────────────────────────────────────────── -->
+    <div class="file-title">{{ file_name }}</div>
+    <div class="meta-row">
+      <span class="bp bp-s"><i class="fa-solid fa-circle-play" style="margin-right:4px"></i>Stream Ready</span>
+      {% if file_type == 'video' %}<span class="bp bp-h"><i class="fa-solid fa-film" style="margin-right:4px"></i>HD</span>{% endif %}
+      <span class="bp bp-k"><i class="fa-solid fa-shield-halved" style="margin-right:4px"></i>Secure</span>
+      <span class="bp bp-sz"><i class="fa-solid fa-database" style="margin-right:4px"></i>{{ file_size }}</span>
     </div>
-    {% elif file_type == 'audio' %}
-    <audio id="player" controls preload="metadata" style="width:100%;padding:24px 18px;display:block;background:transparent;">
-      <source src="{{ stream_url }}" type="audio/mpeg">
-    </audio>
-    {% else %}
-    <div class="doc-card">
-      <i class="fa-solid fa-file-arrow-down"></i>
-      <p>This file cannot be previewed in the browser.<br>Use the Download button below.</p>
+
+    <!-- ── Player Card ───────────────────────────────────────── -->
+    <div class="player-card">
+      {% if file_type == 'video' %}
+      <video id="player" playsinline controls preload="metadata">
+        <source src="{{ stream_url }}" type="video/mp4">
+      </video>
+      <div class="speed-strip">
+        <span class="slbl">SPEED</span>
+        <button class="sbtn" onclick="setSpeed(0.5)">0.5×</button>
+        <button class="sbtn active" onclick="setSpeed(1)">1×</button>
+        <button class="sbtn" onclick="setSpeed(1.25)">1.25×</button>
+        <button class="sbtn" onclick="setSpeed(1.5)">1.5×</button>
+        <button class="sbtn" onclick="setSpeed(2)">2×</button>
+        <button class="pip-btn" onclick="togglePiP()">
+          <i class="fa-solid fa-window-restore"></i> PiP
+        </button>
+      </div>
+      {% elif file_type == 'audio' %}
+      <audio id="player" controls preload="metadata"
+             style="width:100%;padding:28px 20px;display:block;background:transparent;">
+        <source src="{{ stream_url }}" type="audio/mpeg">
+      </audio>
+      {% else %}
+      <div class="doc-card">
+        <i class="fa-solid fa-file-arrow-down"></i>
+        <p>ᴛʜɪꜱ ꜰɪʟᴇ ᴄᴀɴɴᴏᴛ ʙᴇ ᴘʀᴇᴠɪᴇᴡᴇᴅ ɪɴ ᴛʜᴇ ʙʀᴏᴡꜱᴇʀ.<br>
+           ᴜꜱᴇ ᴛʜᴇ ᴅᴏᴡɴʟᴏᴀᴅ ʙᴜᴛᴛᴏɴ ʙᴇʟᴏᴡ ᴛᴏ ꜱᴀᴠᴇ ᴛʜᴇ ꜰɪʟᴇ.</p>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- ── Info Panel ─────────────────────────────────────────── -->
+    <div class="info-panel">
+      {% if file_type in ('video', 'audio') %}
+      <div class="ii">
+        <span class="lbl">Duration</span>
+        <span class="val" id="dur-val">—</span>
+      </div>
+      <div class="idiv"></div>
+      {% if file_type == 'video' %}
+      <div class="ii">
+        <span class="lbl">Resolution</span>
+        <span class="val" id="res-val">—</span>
+      </div>
+      <div class="idiv"></div>
+      {% endif %}
+      {% endif %}
+      <div class="ii">
+        <span class="lbl">Size</span>
+        <span class="val">{{ file_size }}</span>
+      </div>
+      <div class="idiv"></div>
+      <div class="ii">
+        <span class="lbl">Type</span>
+        <span class="val">{{ file_type | upper }}</span>
+      </div>
+      <div class="idiv"></div>
+      <div class="ii">
+        <span class="lbl">Status</span>
+        <span class="val" id="status-val" style="color:var(--status-playing)">Ready</span>
+      </div>
+      <div class="clr">
+        <button class="clbtn" onclick="copyVideoUrl()">
+          <i class="fa-solid fa-copy"></i> ᴄᴏᴘʏ ꜱᴛʀᴇᴀᴍ ᴜʀʟ
+        </button>
+      </div>
+    </div>
+
+    <!-- ── Action Buttons ─────────────────────────────────────── -->
+    <div class="actions-grid">
+      {% if file_type == 'video' %}
+      <button class="ab b-vlc" onclick="vlc_player()">
+        <i class="fa-solid fa-circle-play"></i> VLC Player
+      </button>
+      <button class="ab b-mx" onclick="mx_player()">
+        <i class="fa-solid fa-mobile-screen-button"></i> MX Player
+      </button>
+      <button class="ab b-pl" onclick="playit_player()">
+        <i class="fa-solid fa-bolt"></i> PlayIt
+      </button>
+      <button class="ab b-km" onclick="km_player()">
+        <i class="fa-solid fa-film"></i> KM Player
+      </button>
+      <button class="ab b-sp" onclick="s_player()">
+        <i class="fa-solid fa-play"></i> Simple Player
+      </button>
+      {% endif %}
+      <button class="ab b-dl" onclick="lazyDownload()">
+        <i class="fa-solid fa-cloud-arrow-down"></i> Download
+      </button>
+    </div>
+
+    <!-- ── Keyboard Shortcuts ─────────────────────────────────── -->
+    {% if file_type == 'video' %}
+    <div class="hk-panel">
+      <div class="hk-title"><i class="fa-solid fa-keyboard"></i> ᴋᴇʏʙᴏᴀʀᴅ ꜱʜᴏʀᴛᴄᴜᴛꜱ</div>
+      <div class="hk-grid">
+        <div class="hk"><span class="kbd">Space</span> Play / Pause</div>
+        <div class="hk"><span class="kbd">F</span> Fullscreen</div>
+        <div class="hk"><span class="kbd">M</span> Mute / Unmute</div>
+        <div class="hk"><span class="kbd">←</span><span class="kbd">→</span> Seek 5s</div>
+        <div class="hk"><span class="kbd">↑</span><span class="kbd">↓</span> Volume</div>
+        <div class="hk"><span class="kbd">P</span> Picture-in-Picture</div>
+      </div>
     </div>
     {% endif %}
-  </div>
 
-  <div class="info-panel">
-    {% if file_type in ('video', 'audio') %}
-    <div class="ii"><span class="lbl">Duration</span><span class="val" id="dur-val">—</span></div>
-    <div class="idiv"></div>
-    {% if file_type == 'video' %}
-    <div class="ii"><span class="lbl">Resolution</span><span class="val" id="res-val">—</span></div>
-    <div class="idiv"></div>
-    {% endif %}
-    {% endif %}
-    <div class="ii"><span class="lbl">Size</span><span class="val">{{ file_size }}</span></div>
-    <div class="idiv"></div>
-    <div class="ii"><span class="lbl">Type</span><span class="val">{{ file_type | upper }}</span></div>
-    <div class="idiv"></div>
-    <div class="ii"><span class="lbl">Status</span><span class="val" id="status-val" style="color:#4ade80">Ready</span></div>
-    <div class="clr"><button class="clbtn" onclick="copyVideoUrl()"><i class="fa-solid fa-copy"></i> Copy Stream URL</button></div>
-  </div>
+    <!-- ── Footer ─────────────────────────────────────────────── -->
+    <footer class="site-footer">
+      ᴘᴏᴡᴇʀᴇᴅ ʙʏ <a href="https://t.me/{{ bot_username }}">File2Link</a> &nbsp;·&nbsp;
+      ꜰɪʟᴇꜱ ʜᴏꜱᴛᴇᴅ ᴏɴ ᴛᴇʟᴇɢʀᴀᴍ ʙʏ
+      <a href="https://t.me/FLiX_LY" target="_blank">@FLiX_LY</a>
+    </footer>
 
-  <div class="actions-grid">
-    {% if file_type == 'video' %}
-    <button class="ab b-vlc" onclick="vlc_player()"><i class="fa-solid fa-circle-play"></i> VLC Player</button>
-    <button class="ab b-mx"  onclick="mx_player()"><i class="fa-solid fa-mobile-screen-button"></i> MX Player</button>
-    <button class="ab b-pl"  onclick="playit_player()"><i class="fa-solid fa-bolt"></i> PlayIt</button>
-    <button class="ab b-km"  onclick="km_player()"><i class="fa-solid fa-film"></i> KM Player</button>
-    <button class="ab b-sp"  onclick="s_player()"><i class="fa-solid fa-play"></i> Simple Player</button>
-    {% endif %}
-    <button class="ab b-dl" onclick="lazyDownload()"><i class="fa-solid fa-cloud-arrow-down"></i> Download</button>
-  </div>
+  </div><!-- /container -->
 
-  {% if file_type == 'video' %}
-  <div class="hk-panel">
-    <div class="hk-title">Keyboard Shortcuts</div>
-    <div class="hk-grid">
-      <div class="hk"><span class="kbd">Space</span> Play / Pause</div>
-      <div class="hk"><span class="kbd">F</span> Fullscreen</div>
-      <div class="hk"><span class="kbd">M</span> Mute / Unmute</div>
-      <div class="hk"><span class="kbd">←</span><span class="kbd">→</span> Seek 5s</div>
-      <div class="hk"><span class="kbd">↑</span><span class="kbd">↓</span> Volume</div>
-      <div class="hk"><span class="kbd">P</span> Picture-in-Picture</div>
+  <!-- Toast -->
+  <div class="toast-wrap">
+    <div class="tp" id="toast">
+      <i class="fa-solid fa-check ti" id="ti"></i>
+      <span id="tm">Copied!</span>
     </div>
   </div>
-  {% endif %}
 
-  <footer class="site-footer">
-    Powered by <a href="https://t.me/{{ bot_username }}">File2Link</a> · Files hosted on Telegram by FLiX
-  </footer>
-</div>
-
-<div class="toast-wrap"><div class="tp" id="toast"><i class="fa-solid fa-check ti" id="ti"></i><span id="tm">Copied!</span></div></div>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.plyr.io/3.6.9/plyr.polyfilled.js"></script>
-<script>
-/* ── Template variables injected server-side ───────────────────────── */
-const STREAM_URL   = {{ stream_url | tojson }};
-const DOWNLOAD_URL = {{ download_url | tojson }};
-const FILE_NAME    = {{ file_name | tojson }};
-const FILE_TYPE    = {{ file_type | tojson }};
-
-/* ── Plyr setup (video/audio only) ─────────────────────────────────── */
-let plyrInstance = null;
-const mediaEl = document.getElementById('player');
-if (mediaEl && (FILE_TYPE === 'video' || FILE_TYPE === 'audio')) {
-  plyrInstance = new Plyr('#player', {
-    speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] },
-    keyboard: { focused: true, global: true },
-    tooltips: { controls: true, seek: true },
-  });
-}
-
-/* ── Status / metadata events ───────────────────────────────────────── */
-const sv = document.getElementById('status-val');
-if (mediaEl) {
-  mediaEl.addEventListener('loadedmetadata', () => {
-    const s = Math.floor(mediaEl.duration);
-    const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sc = s % 60;
-    const durEl = document.getElementById('dur-val');
-    if (durEl) durEl.textContent = (h ? h + 'h ' : '') + (m ? m + 'm ' : '') + sc + 's';
-    const resEl = document.getElementById('res-val');
-    if (resEl && mediaEl.videoWidth) resEl.textContent = mediaEl.videoWidth + '×' + mediaEl.videoHeight;
-  });
-  mediaEl.addEventListener('playing', () => { if (sv) { sv.textContent = '● Playing'; sv.style.color = '#4ade80'; } });
-  mediaEl.addEventListener('pause',   () => { if (sv) { sv.textContent = 'Paused';   sv.style.color = '#fbbf24'; } });
-  mediaEl.addEventListener('waiting', () => { if (sv) { sv.textContent = 'Buffering…'; sv.style.color = '#60a5fa'; } });
-  mediaEl.addEventListener('error',   () => { if (sv) { sv.textContent = 'Error';    sv.style.color = '#f87171'; } });
-}
-
-/* ── Speed buttons ──────────────────────────────────────────────────── */
-function setSpeed(s) {
-  if (mediaEl) mediaEl.playbackRate = s;
-  document.querySelectorAll('.sbtn').forEach(b => b.classList.remove('active'));
-  event.target.classList.add('active');
-}
-
-/* ── Picture-in-Picture ─────────────────────────────────────────────── */
-async function togglePiP() {
-  if (!document.pictureInPictureEnabled) return showToast('PiP not supported', 'fa-circle-xmark');
-  try {
-    document.pictureInPictureElement
-      ? await document.exitPictureInPicture()
-      : await mediaEl.requestPictureInPicture();
-    showToast('PiP enabled');
-  } catch (e) {
-    showToast('PiP failed', 'fa-circle-xmark');
+  <script src="https://cdn.plyr.io/3.6.9/plyr.polyfilled.js"></script>
+  <script>
+  /* ── Theme toggle ─────────────────────────────────────────── */
+  (function() {
+    const saved = localStorage.getItem('flix-theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', saved);
+  })();
+  function toggleTheme() {
+    const html = document.documentElement;
+    const current = html.getAttribute('data-theme') || 'dark';
+    const next = current === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-theme', next);
+    localStorage.setItem('flix-theme', next);
   }
-}
 
-/* ── External player launchers ──────────────────────────────────────── */
-const go = u => location.href = u;
-function vlc_player()    { go('vlc://' + STREAM_URL); }
-function mx_player()     { go('intent:' + STREAM_URL + '#Intent;package=com.mxtech.videoplayer.ad;end'); }
-function playit_player() { go('intent:' + STREAM_URL + '#Intent;package=com.playit.videoplayer;end'); }
-function km_player()     { go('intent:' + STREAM_URL + '#Intent;package=com.kmplayer;end'); }
-function s_player()      { go('intent:' + STREAM_URL + '#Intent;package=com.simplemobiletools.videoplayer;end'); }
+  /* ── Template variables ───────────────────────────────────── */
+  const STREAM_URL   = {{ stream_url | tojson }};
+  const DOWNLOAD_URL = {{ download_url | tojson }};
+  const FILE_NAME    = {{ file_name | tojson }};
+  const FILE_TYPE    = {{ file_type | tojson }};
 
-/* ── Download ───────────────────────────────────────────────────────── */
-function lazyDownload() {
-  showToast('Download started…', 'fa-cloud-arrow-down');
-  const a = document.createElement('a');
-  a.href = DOWNLOAD_URL;
-  a.download = FILE_NAME;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-}
+  /* ── Plyr setup ───────────────────────────────────────────── */
+  let plyrInstance = null;
+  const mediaEl = document.getElementById('player');
+  if (mediaEl && (FILE_TYPE === 'video' || FILE_TYPE === 'audio')) {
+    plyrInstance = new Plyr('#player', {
+      speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] },
+      keyboard: { focused: true, global: true },
+      tooltips: { controls: true, seek: true },
+    });
+  }
 
-/* ── Copy helpers ───────────────────────────────────────────────────── */
-function copyLink()     { navigator.clipboard.writeText(location.href).then(() => showToast('Page link copied!')); }
-function copyVideoUrl() { navigator.clipboard.writeText(STREAM_URL).then(() => showToast('Stream URL copied!')); }
+  /* ── Status / metadata events ─────────────────────────────── */
+  const sv = document.getElementById('status-val');
+  if (mediaEl) {
+    mediaEl.addEventListener('loadedmetadata', () => {
+      const s = Math.floor(mediaEl.duration);
+      const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sc = s % 60;
+      const durEl = document.getElementById('dur-val');
+      if (durEl) durEl.textContent = (h ? h + 'h ' : '') + (m ? m + 'm ' : '') + sc + 's';
+      const resEl = document.getElementById('res-val');
+      if (resEl && mediaEl.videoWidth) resEl.textContent = mediaEl.videoWidth + '×' + mediaEl.videoHeight;
+    });
+    mediaEl.addEventListener('playing', () => {
+      if (sv) { sv.textContent = '● Playing'; sv.style.color = 'var(--status-playing)'; }
+    });
+    mediaEl.addEventListener('pause', () => {
+      if (sv) { sv.textContent = 'Paused'; sv.style.color = 'var(--status-paused)'; }
+    });
+    mediaEl.addEventListener('waiting', () => {
+      if (sv) { sv.textContent = 'Buffering…'; sv.style.color = 'var(--status-buffer)'; }
+    });
+    mediaEl.addEventListener('error', () => {
+      if (sv) { sv.textContent = 'Error'; sv.style.color = 'var(--status-error)'; }
+    });
+  }
 
-/* ── Toast notification ─────────────────────────────────────────────── */
-let _tt;
-function showToast(msg, icon = 'fa-check') {
-  const t = document.getElementById('toast');
-  document.getElementById('tm').textContent = msg;
-  document.getElementById('ti').className = `fa-solid ${icon} ti`;
-  t.classList.add('show');
-  clearTimeout(_tt);
-  _tt = setTimeout(() => t.classList.remove('show'), 2500);
-}
+  /* ── Speed buttons ────────────────────────────────────────── */
+  function setSpeed(s) {
+    if (mediaEl) mediaEl.playbackRate = s;
+    document.querySelectorAll('.sbtn').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+  }
 
-/* ── Keyboard shortcuts ─────────────────────────────────────────────── */
-document.addEventListener('keydown', e => {
-  if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
-  if (e.key.toLowerCase() === 'p') togglePiP();
-  if (e.key.toLowerCase() === 'c') copyVideoUrl();
-});
+  /* ── Picture-in-Picture ───────────────────────────────────── */
+  async function togglePiP() {
+    if (!document.pictureInPictureEnabled) return showToast('PiP not supported', 'fa-circle-xmark');
+    try {
+      document.pictureInPictureElement
+        ? await document.exitPictureInPicture()
+        : await mediaEl.requestPictureInPicture();
+      showToast('PiP enabled');
+    } catch (e) {
+      showToast('PiP failed', 'fa-circle-xmark');
+    }
+  }
 
-/* ── Disable right-click ────────────────────────────────────────────── */
-document.addEventListener('contextmenu', e => e.preventDefault());
-</script>
+  /* ── External player launchers ────────────────────────────── */
+  const go = u => location.href = u;
+  function vlc_player()    { go('vlc://' + STREAM_URL); }
+  function mx_player()     { go('intent:' + STREAM_URL + '#Intent;package=com.mxtech.videoplayer.ad;end'); }
+  function playit_player() { go('intent:' + STREAM_URL + '#Intent;package=com.playit.videoplayer;end'); }
+  function km_player()     { go('intent:' + STREAM_URL + '#Intent;package=com.kmplayer;end'); }
+  function s_player()      { go('intent:' + STREAM_URL + '#Intent;package=com.simplemobiletools.videoplayer;end'); }
+
+  /* ── Download ─────────────────────────────────────────────── */
+  function lazyDownload() {
+    showToast('Download started…', 'fa-cloud-arrow-down');
+    const a = document.createElement('a');
+    a.href = DOWNLOAD_URL;
+    a.download = FILE_NAME;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+
+  /* ── Copy helpers ─────────────────────────────────────────── */
+  function copyLink()     { navigator.clipboard.writeText(location.href).then(() => showToast('Page link copied!')); }
+  function copyVideoUrl() { navigator.clipboard.writeText(STREAM_URL).then(() => showToast('Stream URL copied!')); }
+
+  /* ── Toast ────────────────────────────────────────────────── */
+  let _tt;
+  function showToast(msg, icon = 'fa-check') {
+    const t = document.getElementById('toast');
+    document.getElementById('tm').textContent = msg;
+    document.getElementById('ti').className = `fa-solid ${icon} ti`;
+    t.classList.add('show');
+    clearTimeout(_tt);
+    _tt = setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  /* ── Keyboard shortcuts ───────────────────────────────────── */
+  document.addEventListener('keydown', e => {
+    if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+    if (e.key.toLowerCase() === 'p') togglePiP();
+    if (e.key.toLowerCase() === 'c') copyVideoUrl();
+  });
+
+  /* ── Disable right-click ──────────────────────────────────── */
+  document.addEventListener('contextmenu', e => e.preventDefault());
+  </script>
 </body>
 </html>
